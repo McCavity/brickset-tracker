@@ -75,11 +75,30 @@ def save_set(data: dict, session_id: str | None = None) -> dict:
     return {"id": set_id, "status": status, "duplicates": duplicates, "missing": missing}
 
 
-def get_sets(sort_by: str = "date_of_purchase", sort_dir: str = "DESC") -> list[dict]:
-    """Return all set records ordered by the requested column."""
+def get_sets(
+    sort_by: str = "date_of_purchase",
+    sort_dir: str = "DESC",
+    q: str | None = None,
+) -> list[dict]:
+    """Return all set records matching the given filters."""
     if sort_by not in SORT_ALLOWLIST:
         sort_by = "date_of_purchase"
     sort_dir = "ASC" if sort_dir.upper() == "ASC" else "DESC"
+
+    where_clauses: list[str] = []
+    params: list = []
+
+    if q:
+        searchable_columns = [
+            "name", "brand", "set_number", "ean", "theme", "note",
+            "location", "condition",
+            "CAST(release_year AS TEXT)", "CAST(part_count AS TEXT)",
+        ]
+        wrapped = [f"py_lower({col}) LIKE py_lower(?)" for col in searchable_columns]
+        where_clauses.append("(" + " OR ".join(wrapped) + ")")
+        params.extend([f"%{q}%"] * len(searchable_columns))
+
+    where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
     with get_connection() as conn:
         rows = conn.execute(
@@ -88,7 +107,9 @@ def get_sets(sort_by: str = "date_of_purchase", sort_dir: str = "DESC") -> list[
                        web_images, own_photos, minifigs, price_paid,
                        brickset_set_id, status, created_at
                 FROM sets
-                ORDER BY {sort_by} {sort_dir}, id DESC"""
+                {where_sql}
+                ORDER BY {sort_by} {sort_dir}, id DESC""",
+            params,
         ).fetchall()
 
     return [_row_to_dict(r) for r in rows]
