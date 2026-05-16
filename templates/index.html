@@ -197,6 +197,31 @@ async function syncBrickset(id, btn) {
   filterPanel.addEventListener('change', (e) => {
     if (e.target.matches('input[type="checkbox"]')) applyFilters();
   });
+
+  // ── Filter panel collapse/expand ──────────────────────────────────────────
+  const filterToggle = document.getElementById('filter-toggle');
+  const filterBody   = document.getElementById('filter-panel-body');
+  const PANEL_KEY    = 'bst_filters_open';
+
+  function setPanelOpen(open) {
+    filterPanel.classList.toggle('open', open);
+    filterBody.style.display = open ? '' : 'none';
+    const chev = filterToggle.querySelector('.filter-toggle__chevron');
+    if (chev) chev.style.transform = open ? 'rotate(90deg)' : '';
+  }
+
+  // Determine initial state: localStorage, but force open if any filters are active
+  const hasActiveFilters = filterPanel.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+  const savedOpen = localStorage.getItem(PANEL_KEY) === '1';
+  setPanelOpen(savedOpen || hasActiveFilters);
+
+  if (filterToggle) {
+    filterToggle.addEventListener('click', () => {
+      const newOpen = !filterPanel.classList.contains('open');
+      setPanelOpen(newOpen);
+      localStorage.setItem(PANEL_KEY, newOpen ? '1' : '0');
+    });
+  }
 })();
 </script>
 {% endblock %}
