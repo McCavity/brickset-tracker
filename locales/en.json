@@ -1,8 +1,9 @@
 {
   "nav": {
-    "add_set":    "Add Set",
-    "collection": "Collection",
-    "settings":   "Settings"
+    "add_set":         "Add Set",
+    "collection":      "Collection",
+    "settings":        "Settings",
+    "import_brickset": "Import from Brickset"
   },
   "add": {
     "title":           "Add New Set",
@@ -73,6 +74,24 @@
     "status_draft":       "Draft",
     "results_count":      "{shown} of {total} sets",
     "no_matches":         "No sets match these filters"
+  },
+  "import": {
+    "title":                 "Import from Brickset",
+    "intro":                 "This will pull every set you've marked as owned on Brickset and let you preview before importing.",
+    "fetch_button":          "Fetch my Brickset collection",
+    "fetching":              "Fetching...",
+    "summary":               "Brickset reported {bs_total} owned sets. Will create {will_create} new rows across {sets_count} sets; will backfill brickset_set_id on {will_backfill} existing rows.",
+    "col_bs_qty":            "Brickset",
+    "col_local_qty":         "Local",
+    "col_import":            "Import",
+    "hint_partial":          "Local has fewer — adding the difference",
+    "hint_already_covered":  "Already in collection — will backfill brickset_set_id if missing",
+    "hint_local_richer":     "Local has more — sync any row to push {diff} back to Brickset",
+    "submit_button":         "Import selected ({n} rows)",
+    "flash_success":         "Imported {created} new rows; backfilled brickset_set_id on {backfilled} existing rows.",
+    "error_quota":           "Brickset API daily quota exhausted. Try again tomorrow.",
+    "error_fetch":           "Could not reach Brickset: {message}",
+    "no_sets":               "Brickset returned no owned sets."
   },
   "quota": {
     "remaining": "Merlinssteine: {remaining}/{limit} today"

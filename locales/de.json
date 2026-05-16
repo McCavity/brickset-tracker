@@ -1,8 +1,9 @@
 {
   "nav": {
-    "add_set":    "Set hinzufügen",
-    "collection": "Sammlung",
-    "settings":   "Einstellungen"
+    "add_set":         "Set hinzufügen",
+    "collection":      "Sammlung",
+    "settings":        "Einstellungen",
+    "import_brickset": "Aus Brickset importieren"
   },
   "add": {
     "title":           "Neues Set hinzufügen",
@@ -73,6 +74,24 @@
     "status_draft":       "Entwurf",
     "results_count":      "{shown} von {total} Sets",
     "no_matches":         "Keine Sets entsprechen diesen Filtern"
+  },
+  "import": {
+    "title":                 "Aus Brickset importieren",
+    "intro":                 "Hierbei werden alle Sets, die du auf Brickset als eigen markiert hast, abgerufen und zur Vorschau angezeigt.",
+    "fetch_button":          "Meine Brickset-Sammlung abrufen",
+    "fetching":              "Wird abgerufen…",
+    "summary":               "Brickset meldet {bs_total} eigene Sets. {will_create} neue Einträge in {sets_count} Sets werden erstellt; brickset_set_id wird bei {will_backfill} bestehenden Einträgen ergänzt.",
+    "col_bs_qty":            "Brickset",
+    "col_local_qty":         "Lokal",
+    "col_import":            "Importieren",
+    "hint_partial":          "Lokal weniger — Differenz wird ergänzt",
+    "hint_already_covered":  "Bereits in Sammlung — brickset_set_id wird ggf. ergänzt",
+    "hint_local_richer":     "Lokal mehr — eine Zeile synchronisieren, um {diff} zurück an Brickset zu senden",
+    "submit_button":         "Auswahl importieren ({n} Einträge)",
+    "flash_success":         "{created} neue Einträge importiert; brickset_set_id bei {backfilled} bestehenden Einträgen ergänzt.",
+    "error_quota":           "Brickset-API-Tageslimit erschöpft. Bitte morgen erneut versuchen.",
+    "error_fetch":           "Brickset nicht erreichbar: {message}",
+    "no_sets":               "Brickset meldet keine eigenen Sets."
   },
   "quota": {
     "remaining": "Merlinssteine: {remaining}/{limit} heute"
