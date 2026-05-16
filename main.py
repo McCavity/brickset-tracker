@@ -122,6 +122,11 @@ async def add_page(request: Request):
     ))
 
 
+@app.get("/import/brickset", response_class=HTMLResponse)
+async def import_page(request: Request):
+    return templates.TemplateResponse(request, "import_brickset.html", context=_ctx(request))
+
+
 # ── API ────────────────────────────────────────────────────────────────────
 
 @app.post("/api/lookup")
