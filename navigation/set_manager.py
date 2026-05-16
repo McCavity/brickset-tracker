@@ -115,6 +115,13 @@ def get_sets(
     return [_row_to_dict(r) for r in rows]
 
 
+def count_all_sets() -> int:
+    """Total set count across the whole collection, ignoring all filters."""
+    with get_connection() as conn:
+        row = conn.execute("SELECT COUNT(*) AS n FROM sets").fetchone()
+    return row["n"]
+
+
 def _build_filter_clauses(
     *,
     q: str | None = None,
