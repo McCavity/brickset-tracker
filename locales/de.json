@@ -1,0 +1,71 @@
+{
+  "nav": {
+    "add_set":    "Set hinzufügen",
+    "collection": "Sammlung",
+    "settings":   "Einstellungen"
+  },
+  "add": {
+    "title":           "Neues Set hinzufügen",
+    "scan_ean":        "EAN scannen / eingeben",
+    "brand":           "Marke",
+    "set_number":      "Set-Nummer",
+    "name":            "Name",
+    "part_count":      "Teileanzahl",
+    "condition":       "Zustand",
+    "location":        "Standort",
+    "date_of_purchase":"Kaufdatum",
+    "note":            "Notiz",
+    "theme":           "Thema",
+    "release_year":    "Erscheinungsjahr",
+    "minifigs":        "Minifiguren",
+    "price_paid":      "Kaufpreis (€)",
+    "save":            "Speichern",
+    "save_draft":      "Als Entwurf speichern",
+    "cancel":          "Abbrechen",
+    "lookup":          "Daten abrufen",
+    "sync_brickset":   "Mit Brickset synchronisieren",
+    "photos":          "Fotos",
+    "photo_hint":      "Fotos hochladen oder hierher ziehen",
+    "photo_formats":   "JPG · PNG · WEBP · HEIC · max. 20 MB"
+  },
+  "condition": {
+    "ovp":      "OVP — gekauft, ungeöffnet",
+    "im_bau":   "Im Bau — angefangen, liegt irgendwo",
+    "gebaut":   "Gebaut — fertig, steht/liegt",
+    "abgebaut": "Abgebaut — wieder zerlegt, in Kisten oder Tüten",
+    "verkauft": "Verkauft — nicht mehr vorhanden"
+  },
+  "errors": {
+    "required_fields":    "Pflichtfelder fehlen: {fields}",
+    "rate_limit":         "Tageslimit für merlinssteine.de erreicht ({used}/{limit}). Bitte manuell eingeben.",
+    "not_found":          "Set nicht gefunden. Bitte manuell eingeben.",
+    "scrape_error":       "Fehler beim Abrufen der Daten. Bitte manuell eingeben.",
+    "duplicate_warning":  "Dieses Set existiert bereits {count}× in deiner Sammlung.",
+    "delete_confirm":     "Dieses Set wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "ean_unresolved":     "EAN nicht erkannt. Bitte Marke und Set-Nummer manuell eingeben.",
+    "ean_ambiguous":      "Mehrere Treffer für diese EAN. Bitte wähle das richtige Set."
+  },
+  "edit": {
+    "title":      "Set bearbeiten",
+    "save":       "Änderungen speichern",
+    "add_photos": "Weitere Fotos hinzufügen"
+  },
+  "list": {
+    "title":       "Meine Sammlung",
+    "sort_by":     "Sortieren nach",
+    "sort_date":   "Kaufdatum",
+    "sort_name":   "Name",
+    "sort_brand":  "Marke",
+    "sort_parts":  "Teileanzahl",
+    "sort_price":  "Preis",
+    "draft_badge": "Entwurf",
+    "empty":       "Noch keine Sets. Füge dein erstes Set hinzu!"
+  },
+  "quota": {
+    "remaining": "Merlinssteine: {remaining}/{limit} heute"
+  },
+  "lang": {
+    "de": "Deutsch",
+    "en": "English"
+  }
+}

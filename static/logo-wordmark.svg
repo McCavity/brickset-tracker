@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" fill="none" role="img" aria-label="Verklemmt und zugenäht!">
+  <defs>
+    
+    <g id="vuz-star5-wm">
+      <path fill="#B8860B" d="M 0,-7 L 2.06,-2.16 L 6.66,-2.16 L 2.69,0.83 L 4.32,5.66 L 0,2.80 L -4.32,5.66 L -2.69,0.83 L -6.66,-2.16 L -2.06,-2.16 Z"></path>
+    </g>
+  </defs>
+
+  
+  <g transform="translate(20 20)">
+    <circle cx="80" cy="80" r="76" fill="#F5F0E8"></circle>
+    <circle cx="80" cy="80" r="76" stroke="#1B3A5C" stroke-width="1.4"></circle>
+    <circle cx="80" cy="80" r="70" stroke="#1B3A5C" stroke-width="2"></circle>
+
+    <use href="#vuz-star5-wm" x="16" y="80"></use>
+    <use href="#vuz-star5-wm" x="144" y="80"></use>
+
+    <text x="66" y="100" font-family="Fraunces, serif" font-style="italic" font-weight="500" font-size="80" fill="#1B3A5C" text-anchor="middle" style="font-variation-settings: &#39;opsz&#39; 144;">V</text>
+    <text x="90" y="124" font-family="Fraunces, serif" font-style="italic" font-weight="500" font-size="80" fill="#3A7CA5" text-anchor="middle" style="font-variation-settings: &#39;opsz&#39; 144;">Z</text>
+    <text x="80" y="110" font-family="Fraunces, serif" font-style="italic" font-weight="500" font-size="48" fill="#B8860B" text-anchor="middle" style="font-variation-settings: &#39;opsz&#39; 144;">&amp;</text>
+    <clipPath id="vuz-z-bridge-wm"><rect x="78" y="84" width="38" height="12"></rect></clipPath>
+    <text x="90" y="124" clip-path="url(#vuz-z-bridge-wm)" font-family="Fraunces, serif" font-style="italic" font-weight="500" font-size="80" fill="#3A7CA5" text-anchor="middle" style="font-variation-settings: &#39;opsz&#39; 144;">Z</text>
+  </g>
+
+  
+  <text x="210" y="100" font-family="Fraunces, serif" font-style="italic" font-weight="400" font-size="48" fill="#1B3A5C" style="font-variation-settings: &#39;opsz&#39; 144;">Verklemmt und zugenäht!</text>
+  <text x="212" y="128" font-family="Inter, sans-serif" font-weight="500" font-size="11" letter-spacing="2.4" fill="#6B6560">AFOB · KLEMMBAUSTEINE · EXPERIMENTE</text>
+</svg>

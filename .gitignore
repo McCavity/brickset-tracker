@@ -1,0 +1,14 @@
+.env
+data/
+data/*.db
+data/*.db-journal
+uploads/
+.tmp/
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.DS_Store
+docs/superpowers/specs/*.draft.md

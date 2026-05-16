@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+{% block title %}{{ t('edit.title') }} · Brickset Tracker{% endblock %}
+{% block header_title %}{{ t('edit.title') }}{% endblock %}
+
+{% block content %}
+
+{# ── EAN / Lookup row (re-fetch data) ─────────────────────────────── #}
+<div class="ean-row">
+  <div class="field" style="max-width:260px">
+    <label for="ean-input">{{ t('add.scan_ean') }}</label>
+    <input type="text" id="ean-input" inputmode="numeric" autocomplete="off"
+           value="{{ set.ean or '' }}">
+  </div>
+  <div class="field" style="max-width:200px">
+    <label for="brand-input">{{ t('add.brand') }}</label>
+    <input type="text" id="brand-input" list="brands-list"
+           value="{{ set.brand or '' }}">
+  </div>
+  <div class="field" style="max-width:160px">
+    <label for="setnumber-input">{{ t('add.set_number') }}</label>
+    <input type="text" id="setnumber-input" value="{{ set.set_number or '' }}">
+  </div>
+  <button type="button" class="btn btn-secondary" id="lookup-btn" onclick="doLookup()">
+    <i data-lucide="search" style="width:15px;height:15px"></i>
+    {{ t('add.lookup') }}
+  </button>
+</div>
+
+{# ── Main form ────────────────────────────────────────────────────── #}
+<form id="set-form" onsubmit="submitEdit(event)">
+  <input type="hidden" id="session-id"          name="session_id"          value="">
+  <input type="hidden" id="web-images-json"      name="web_images_json"     value='{{ set.web_images | tojson }}'>
+  <input type="hidden" id="brickset-set-id"      name="brickset_set_id"     value="{{ set.brickset_set_id or '' }}">
+  <input type="hidden" id="existing-own-photos"  name="existing_own_photos" value='{{ set.own_photos | tojson }}'>
+
+  <div class="form-grid">
+
+    <div class="field">
+      <label for="f-brand">{{ t('add.brand') }} <span class="required">*</span></label>
+      <input type="text" id="f-brand" name="brand" required list="brands-list"
+             value="{{ set.brand or '' }}">
+    </div>
+
+    <div class="field">
+      <label for="f-setnumber">{{ t('add.set_number') }} <span class="required">*</span></label>
+      <input type="text" id="f-setnumber" name="set_number" required
+             value="{{ set.set_number or '' }}">
+    </div>
+
+    <div class="field span-2">
+      <label for="f-name">{{ t('add.name') }} <span class="required">*</span></label>
+      <input type="text" id="f-name" name="name" required
+             value="{{ set.name or '' }}">
+    </div>
+
+    <div class="field">
+      <label for="f-parts">{{ t('add.part_count') }} <span class="required">*</span></label>
+      <input type="number" id="f-parts" name="part_count" min="1"
+             value="{{ set.part_count or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
+      <label for="f-condition">{{ t('add.condition') }}</label>
+      <select id="f-condition" name="condition">
+        <option value="">—</option>
+        {% for c in conditions %}
+        <option value="{{ c }}" {% if set.condition == c %}selected{% endif %}>
+          {{ t('condition.' ~ c) }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="f-location">{{ t('add.location') }}</label>
+      <input type="text" id="f-location" name="location"
+             value="{{ set.location or '' }}">
+    </div>
+
+    <div class="field">
+      <label for="f-date">{{ t('add.date_of_purchase') }}</label>
+      <input type="date" id="f-date" name="date_of_purchase"
+             value="{{ set.date_of_purchase or '' }}"
+             style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
+      <label for="f-price">{{ t('add.price_paid') }}</label>
+      <input type="text" inputmode="decimal" id="f-price" name="price_paid"
+             value="{{ set.price_paid or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
+      <label for="f-theme">{{ t('add.theme') }}</label>
+      <input type="text" id="f-theme" name="theme"
+             value="{{ set.theme or '' }}">
+    </div>
+
+    <div class="field">
+      <label for="f-year">{{ t('add.release_year') }}</label>
+      <input type="number" id="f-year" name="release_year" min="1950" max="2099"
+             value="{{ set.release_year or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
+      <label for="f-minifigs">{{ t('add.minifigs') }}</label>
+      <input type="number" id="f-minifigs" name="minifigs" min="0"
+             value="{{ set.minifigs or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
+      <label>EAN</label>
+      <input type="text" id="f-ean" name="ean"
+             value="{{ set.ean or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field span-2">
+      <label for="f-note">{{ t('add.note') }}</label>
+      <textarea id="f-note" name="note">{{ set.note or '' }}</textarea>
+    </div>
+
+    {# ── Existing own photos ───────────────────────────────────────── #}
+    {% if set.own_photos %}
+    <div class="field span-2">
+      <label>{{ t('add.photos') }}</label>
+      <div class="photo-preview-list" id="existing-photo-list">
+        {% for photo_path in set.own_photos %}
+        <div class="photo-thumb" id="ephoto-{{ loop.index0 }}">
+          <img src="/{{ photo_path }}">
+          <button type="button" class="photo-thumb__remove"
+                  onclick="removeExistingPhoto('{{ photo_path }}', 'ephoto-{{ loop.index0 }}')">×</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# ── New photo upload ──────────────────────────────────────────── #}
+    <div class="field span-2">
+      <label>{{ t('edit.add_photos') }}</label>
+      <div class="photo-drop" id="photo-drop"
+           onclick="document.getElementById('photo-input').click()"
+           ondragover="event.preventDefault();this.classList.add('dragover')"
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="handleDrop(event)">
+        <i data-lucide="upload-cloud" style="width:28px;height:28px;color:var(--fg-muted);margin-bottom:8px"></i>
+        <p>{{ t('add.photo_hint') }}</p>
+        <p style="margin-top:4px;font-size:11px">{{ t('add.photo_formats') }}</p>
+      </div>
+      <input type="file" id="photo-input" accept=".jpg,.jpeg,.png,.webp,.heic"
+             multiple style="display:none" onchange="handleFiles(this.files)">
+      <div class="photo-preview-list" id="photo-preview"></div>
+    </div>
+
+  </div>{# /form-grid #}
+
+  {# Web images preview #}
+  <div id="web-image-preview" style="margin-top:12px"></div>
+
+  <div class="form-actions">
+    <a href="/" class="btn btn-ghost">
+      <i data-lucide="x" style="width:15px;height:15px"></i>
+      {{ t('add.cancel') }}
+    </a>
+    <span class="spacer"></span>
+    <button type="submit" class="btn btn-primary">
+      <i data-lucide="save" style="width:15px;height:15px"></i>
+      {{ t('edit.save') }}
+    </button>
+  </div>
+
+</form>
+
+<datalist id="brands-list">
+  {% for b in brands %}
+  <option value="{{ b }}">
+  {% endfor %}
+</datalist>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Session ID ────────────────────────────────────────────────────────────
+(function () {
+  let sid = sessionStorage.getItem('bst_session_id');
+  if (!sid) { sid = crypto.randomUUID(); sessionStorage.setItem('bst_session_id', sid); }
+  document.getElementById('session-id').value = sid;
+})();
+
+// ── Show existing web images on load ──────────────────────────────────────
+(function () {
+  const urls = JSON.parse(document.getElementById('web-images-json').value || '[]');
+  if (urls.length) renderWebImages(urls);
+})();
+
+// ── EAN lookup ────────────────────────────────────────────────────────────
+async function doLookup() {
+  const ean   = document.getElementById('ean-input').value.trim();
+  const brand = document.getElementById('brand-input').value.trim();
+  const num   = document.getElementById('setnumber-input').value.trim();
+  if (!ean && !brand && !num) return;
+
+  const btn = document.getElementById('lookup-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  const body = new FormData();
+  if (ean)   body.append('ean', ean);
+  if (brand) body.append('brand', brand);
+  if (num)   body.append('set_number', num);
+
+  const r    = await fetch('/api/lookup', { method: 'POST', body });
+  const data = await r.json();
+
+  btn.disabled = false;
+  lucide.createIcons();
+  btn.innerHTML = '<i data-lucide="search" style="width:15px;height:15px"></i> '
+    + (document.documentElement.lang === 'de' ? 'Daten abrufen' : 'Fetch Data');
+  lucide.createIcons();
+
+  applyPrefill(data.prefill || {});
+}
+
+// ── Pre-fill form ─────────────────────────────────────────────────────────
+function applyPrefill(p) {
+  const map = {
+    brand: 'f-brand', set_number: 'f-setnumber', name: 'f-name',
+    part_count: 'f-parts', theme: 'f-theme', release_year: 'f-year',
+    price_paid: 'f-price', ean: 'f-ean', note: 'f-note',
+    condition: 'f-condition', location: 'f-location', date_of_purchase: 'f-date',
+  };
+  for (const [key, id] of Object.entries(map)) {
+    if (p[key] !== undefined && p[key] !== null) {
+      const el = document.getElementById(id);
+      if (el) el.value = p[key];
+    }
+  }
+  if (p.brickset_set_id) document.getElementById('brickset-set-id').value = p.brickset_set_id;
+  if (p.web_images && p.web_images.length) {
+    document.getElementById('web-images-json').value = JSON.stringify(p.web_images);
+    renderWebImages(p.web_images);
+  }
+  if (p.brand)      document.getElementById('brand-input').value      = p.brand;
+  if (p.set_number) document.getElementById('setnumber-input').value  = p.set_number;
+  if (p.ean)        document.getElementById('ean-input').value        = p.ean;
+}
+
+function renderWebImages(urls) {
+  const wrap = document.getElementById('web-image-preview');
+  wrap.innerHTML = '';
+  urls.forEach(url => {
+    const img = document.createElement('img');
+    img.src = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--rule);margin-right:8px';
+    img.onerror = () => img.style.display = 'none';
+    wrap.appendChild(img);
+  });
+}
+
+// ── Existing photo removal ────────────────────────────────────────────────
+function removeExistingPhoto(path, thumbId) {
+  document.getElementById(thumbId).remove();
+  const input = document.getElementById('existing-own-photos');
+  const paths = JSON.parse(input.value || '[]');
+  input.value = JSON.stringify(paths.filter(p => p !== path));
+}
+
+// ── New photo upload ──────────────────────────────────────────────────────
+async function handleFiles(files) { for (const f of files) await uploadPhoto(f); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('photo-drop').classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+}
+async function uploadPhoto(file) {
+  const sid  = document.getElementById('session-id').value;
+  const body = new FormData();
+  body.append('file', file);
+  body.append('session_id', sid);
+  const r    = await fetch('/api/upload', { method: 'POST', body });
+  const data = await r.json();
+  if (data.ok) addPhotoThumb(data.path);
+  else alert(data.error);
+}
+function addPhotoThumb(path) {
+  const wrap  = document.getElementById('photo-preview');
+  const thumb = document.createElement('div');
+  thumb.className = 'photo-thumb';
+  thumb.innerHTML = `<img src="/${path}">
+    <button type="button" class="photo-thumb__remove" onclick="this.parentElement.remove()">×</button>`;
+  wrap.appendChild(thumb);
+}
+
+// ── Form submit ───────────────────────────────────────────────────────────
+async function submitEdit(e) {
+  e.preventDefault();
+  const btn = e.submitter || document.querySelector('#set-form [type="submit"]');
+  const origLabel = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
+
+  try {
+    const body = new FormData(document.getElementById('set-form'));
+    const r    = await fetch('/api/sets/{{ set.id }}/update', { method: 'POST', body });
+    if (!r.ok) throw new Error(`Server error ${r.status}`);
+    const data = await r.json();
+    if (data.status === 'complete' || data.status === 'draft') {
+      window.location.href = '/';
+      return;
+    }
+    throw new Error(`Unexpected status: ${JSON.stringify(data)}`);
+  } catch (err) {
+    alert('Speichern fehlgeschlagen: ' + err.message);
+    if (btn) { btn.disabled = false; btn.innerHTML = origLabel; lucide.createIcons(); }
+  }
+}
+
+// ── Form state persistence across language switch ─────────────────────────
+const _FIELD_IDS = ['f-brand','f-setnumber','f-name','f-parts','f-condition',
+  'f-location','f-date','f-price','f-theme','f-year','f-minifigs','f-ean','f-note'];
+const _SK = 'bst_edit_state_{{ set.id }}';
+
+function _saveEditState() {
+  const data = {};
+  _FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) data[id] = el.value; });
+  data._ean     = document.getElementById('ean-input').value;
+  data._brand   = document.getElementById('brand-input').value;
+  data._setno   = document.getElementById('setnumber-input').value;
+  data._wimg    = document.getElementById('web-images-json').value;
+  data._bsid    = document.getElementById('brickset-set-id').value;
+  data._ephotos = document.getElementById('existing-own-photos').value;
+  sessionStorage.setItem(_SK, JSON.stringify(data));
+}
+
+function _restoreEditState() {
+  const raw = sessionStorage.getItem(_SK);
+  if (!raw) return;
+  sessionStorage.removeItem(_SK);
+  const data = JSON.parse(raw);
+  _FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && data[id] != null) el.value = data[id]; });
+  if (data._ean)     document.getElementById('ean-input').value          = data._ean;
+  if (data._brand)   document.getElementById('brand-input').value        = data._brand;
+  if (data._setno)   document.getElementById('setnumber-input').value    = data._setno;
+  if (data._bsid)    document.getElementById('brickset-set-id').value    = data._bsid;
+  if (data._ephotos) document.getElementById('existing-own-photos').value = data._ephotos;
+  if (data._wimg) {
+    document.getElementById('web-images-json').value = data._wimg;
+    const urls = JSON.parse(data._wimg || '[]');
+    if (urls.length) renderWebImages(urls);
+  }
+}
+
+document.querySelector('form[action="/set-lang"]')?.addEventListener('submit', _saveEditState);
+_restoreEditState();
+</script>
+{% endblock %}

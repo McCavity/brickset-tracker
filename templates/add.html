@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+{% block title %}{{ t('add.title') }} · Brickset Tracker{% endblock %}
+{% block header_title %}{{ t('add.title') }}{% endblock %}
+
+{% block content %}
+
+{# ── Callout (rate_limit / not_found / error) ─────────────────────── #}
+{% if callout %}
+<div class="callout callout-{{ callout.type }}">
+  <span class="callout__mark">
+    {% if callout.type == 'error' %}Fehler{% elif callout.type == 'warn' %}Achtung{% else %}Hinweis{% endif %}
+  </span>
+  <p>{{ callout.message }}</p>
+</div>
+{% endif %}
+
+{# ── Duplicate warning (shown from JS after lookup) ───────────────── #}
+<div class="callout callout-warn hidden" id="duplicate-callout">
+  <span class="callout__mark">{{ t('list.sort_brand') }}</span>
+  <p id="duplicate-text"></p>
+</div>
+
+{# ── EAN / Lookup row ─────────────────────────────────────────────── #}
+<div class="ean-row">
+  <div class="field" style="max-width:260px">
+    <label for="ean-input">{{ t('add.scan_ean') }}</label>
+    <input type="text" id="ean-input" placeholder="z. B. 4060904018514"
+           inputmode="numeric" autocomplete="off"
+           value="{{ prefill.ean or '' }}">
+  </div>
+  <div class="field" style="max-width:200px">
+    <label for="brand-input">{{ t('add.brand') }}</label>
+    <input type="text" id="brand-input" placeholder="BlueBrixx" list="brands-list"
+           value="{{ prefill.brand or '' }}">
+  </div>
+  <div class="field" style="max-width:160px">
+    <label for="setnumber-input">{{ t('add.set_number') }}</label>
+    <input type="text" id="setnumber-input" placeholder="107916"
+           value="{{ prefill.set_number or '' }}">
+  </div>
+  <button type="button" class="btn btn-secondary" id="lookup-btn" onclick="doLookup()">
+    <i data-lucide="search" style="width:15px;height:15px"></i>
+    {{ t('add.lookup') }}
+  </button>
+</div>
+
+{# ── Main form ────────────────────────────────────────────────────── #}
+<form id="set-form" onsubmit="submitSet(event)">
+  <input type="hidden" id="session-id" name="session_id" value="{{ session_id or '' }}">
+  <input type="hidden" id="web-images-json" name="web_images_json" value="{{ prefill.web_images | tojson if prefill.web_images else '[]' }}">
+  <input type="hidden" id="brickset-set-id" name="brickset_set_id" value="{{ prefill.brickset_set_id or '' }}">
+
+  <div class="form-grid">
+
+    <div class="field">
+      <label for="f-brand">{{ t('add.brand') }} <span class="required">*</span></label>
+      <input type="text" id="f-brand" name="brand" required list="brands-list"
+             value="{{ prefill.brand or '' }}">
+    </div>
+
+    <div class="field">
+      <label for="f-setnumber">{{ t('add.set_number') }} <span class="required">*</span></label>
+      <input type="text" id="f-setnumber" name="set_number" required
+             value="{{ prefill.set_number or '' }}">
+    </div>
+
+    <div class="field span-2">
+      <label for="f-name">{{ t('add.name') }} <span class="required">*</span></label>
+      <input type="text" id="f-name" name="name" required
+             value="{{ prefill.name or '' }}">
+    </div>
+
+    <div class="field">
+      <label for="f-parts">{{ t('add.part_count') }} <span class="required">*</span></label>
+      <input type="number" id="f-parts" name="part_count" min="1"
+             value="{{ prefill.part_count or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
+      <label for="f-condition">{{ t('add.condition') }}</label>
+      <select id="f-condition" name="condition">
+        <option value="">—</option>
+        {% for c in conditions %}
+        <option value="{{ c }}" {% if prefill.condition == c %}selected{% endif %}>
+          {{ t('condition.' ~ c) }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="f-location">{{ t('add.location') }}</label>
+      <input type="text" id="f-location" name="location"
+             value="{{ prefill.location or '' }}">
+    </div>
+
+    <div class="field">
+      <label for="f-date">{{ t('add.date_of_purchase') }}</label>
+      <input type="date" id="f-date" name="date_of_purchase"
+             value="{{ prefill.date_of_purchase or today }}"
+             style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
+      <label for="f-price">{{ t('add.price_paid') }}</label>
+      <input type="text" inputmode="decimal" id="f-price" name="price_paid"
+             value="{{ prefill.price_paid or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
+      <label for="f-theme">{{ t('add.theme') }}</label>
+      <input type="text" id="f-theme" name="theme"
+             value="{{ prefill.theme or '' }}">
+    </div>
+
+    <div class="field">
+      <label for="f-year">{{ t('add.release_year') }}</label>
+      <input type="number" id="f-year" name="release_year" min="1950" max="2099"
+             value="{{ prefill.release_year or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
+      <label for="f-minifigs">{{ t('add.minifigs') }}</label>
+      <input type="number" id="f-minifigs" name="minifigs" min="0"
+             value="{{ prefill.minifigs or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
+      <label>EAN</label>
+      <input type="text" id="f-ean" name="ean"
+             value="{{ prefill.ean or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field span-2">
+      <label for="f-note">{{ t('add.note') }}</label>
+      <textarea id="f-note" name="note">{{ prefill.note or '' }}</textarea>
+    </div>
+
+    {# Photos #}
+    <div class="field span-2">
+      <label>{{ t('add.photos') }}</label>
+      <div class="photo-drop" id="photo-drop"
+           onclick="document.getElementById('photo-input').click()"
+           ondragover="event.preventDefault();this.classList.add('dragover')"
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="handleDrop(event)">
+        <i data-lucide="upload-cloud" style="width:28px;height:28px;color:var(--fg-muted);margin-bottom:8px"></i>
+        <p>{{ t('add.photo_hint') }}</p>
+        <p style="margin-top:4px;font-size:11px">{{ t('add.photo_formats') }}</p>
+      </div>
+      <input type="file" id="photo-input" accept=".jpg,.jpeg,.png,.webp,.heic"
+             multiple style="display:none" onchange="handleFiles(this.files)">
+      <div class="photo-preview-list" id="photo-preview"></div>
+    </div>
+
+  </div>{# /form-grid #}
+
+  {# Web images preview #}
+  <div id="web-image-preview" style="margin-top:12px"></div>
+
+  <div class="form-actions">
+    <a href="/" class="btn btn-ghost">
+      <i data-lucide="x" style="width:15px;height:15px"></i>
+      {{ t('add.cancel') }}
+    </a>
+    <span class="spacer"></span>
+    <button type="submit" name="_save_mode" value="draft" class="btn btn-secondary" id="draft-btn">
+      {{ t('add.save_draft') }}
+    </button>
+    <button type="submit" name="_save_mode" value="save" class="btn btn-primary" id="save-btn">
+      <i data-lucide="save" style="width:15px;height:15px"></i>
+      {{ t('add.save') }}
+    </button>
+  </div>
+
+</form>
+
+<datalist id="brands-list">
+  {% for b in brands %}
+  <option value="{{ b }}">
+  {% endfor %}
+</datalist>
+
+{# ── Candidate selection modal (EAN ambiguous) ───────────────────── #}
+<div class="modal-scrim hidden" id="candidate-modal">
+  <div class="modal">
+    <h2>{{ t('errors.ean_ambiguous') }}</h2>
+    <div id="candidate-list" style="display:flex;flex-direction:column;gap:8px;margin:16px 0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('candidate-modal').classList.add('hidden')">
+        {{ t('add.cancel') }}
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Session ID ────────────────────────────────────────────────────────────
+(function() {
+  let sid = sessionStorage.getItem('bst_session_id');
+  if (!sid) {
+    sid = crypto.randomUUID();
+    sessionStorage.setItem('bst_session_id', sid);
+  }
+  document.getElementById('session-id').value = sid;
+})();
+
+// ── EAN lookup ───────────────────────────────────────────────────────────
+async function doLookup() {
+  const ean  = document.getElementById('ean-input').value.trim();
+  const brand = document.getElementById('brand-input').value.trim();
+  const num   = document.getElementById('setnumber-input').value.trim();
+
+  if (!ean && !brand && !num) return;
+
+  const btn = document.getElementById('lookup-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  const body = new FormData();
+  if (ean)   body.append('ean', ean);
+  if (brand) body.append('brand', brand);
+  if (num)   body.append('set_number', num);
+
+  const r    = await fetch('/api/lookup', { method: 'POST', body });
+  const data = await r.json();
+
+  btn.disabled = false;
+  lucide.createIcons();
+  btn.innerHTML = '<i data-lucide="search" style="width:15px;height:15px"></i> '
+    + (document.documentElement.lang === 'de' ? 'Daten abrufen' : 'Fetch Data');
+  lucide.createIcons();
+
+  if (data.status === 'ambiguous') {
+    showCandidates(data.candidates);
+    return;
+  }
+
+  applyPrefill(data.prefill || {});
+
+  if (data.status === 'rate_limit' || data.status === 'not_found' || data.status === 'error') {
+    showCallout(data.message, 'warn');
+  } else if (data.status === 'ean_unresolved') {
+    showCallout(data.message, 'info');
+  }
+
+  if ((data.prefill || {}).duplicates && data.prefill.duplicates.length) {
+    showDuplicateWarning(data.prefill.duplicates);
+  }
+}
+
+// Auto-lookup on EAN input (13 digits)
+document.getElementById('ean-input').addEventListener('input', function() {
+  if (this.value.replace(/\D/g,'').length >= 13) doLookup();
+});
+
+// ── Pre-fill form ────────────────────────────────────────────────────────
+function applyPrefill(p) {
+  const map = {
+    brand: 'f-brand', set_number: 'f-setnumber', name: 'f-name',
+    part_count: 'f-parts', theme: 'f-theme', release_year: 'f-year',
+    price_paid: 'f-price', ean: 'f-ean', note: 'f-note',
+    condition: 'f-condition', location: 'f-location',
+    date_of_purchase: 'f-date',
+  };
+  for (const [key, id] of Object.entries(map)) {
+    if (p[key] !== undefined && p[key] !== null) {
+      const el = document.getElementById(id);
+      if (el) el.value = p[key];
+    }
+  }
+  if (p.brickset_set_id) {
+    document.getElementById('brickset-set-id').value = p.brickset_set_id;
+  }
+  if (p.web_images && p.web_images.length) {
+    document.getElementById('web-images-json').value = JSON.stringify(p.web_images);
+    renderWebImages(p.web_images);
+  }
+  // Sync lookup fields
+  if (p.brand)      document.getElementById('brand-input').value = p.brand;
+  if (p.set_number) document.getElementById('setnumber-input').value = p.set_number;
+  if (p.ean)        document.getElementById('ean-input').value = p.ean;
+}
+
+function renderWebImages(urls) {
+  const wrap = document.getElementById('web-image-preview');
+  wrap.innerHTML = '';
+  urls.forEach(url => {
+    const img = document.createElement('img');
+    img.src = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--rule);margin-right:8px';
+    img.onerror = () => img.style.display = 'none';
+    wrap.appendChild(img);
+  });
+}
+
+// ── Callout ──────────────────────────────────────────────────────────────
+function showCallout(msg, type) {
+  // Inline callout above form — inject dynamically
+  let el = document.getElementById('dynamic-callout');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'dynamic-callout';
+    document.getElementById('set-form').before(el);
+  }
+  const typeMap = { warn: 'Achtung', info: 'Hinweis', error: 'Fehler', ok: 'Klappt' };
+  el.className = `callout callout-${type}`;
+  el.innerHTML = `<span class="callout__mark">${typeMap[type] || 'Hinweis'}</span><p>${msg}</p>`;
+}
+
+// ── Duplicate warning ────────────────────────────────────────────────────
+function showDuplicateWarning(dupes) {
+  const callout = document.getElementById('duplicate-callout');
+  const text    = document.getElementById('duplicate-text');
+  const lang    = document.documentElement.lang;
+  const msg     = lang === 'de'
+    ? `Dieses Set existiert bereits ${dupes.length}× in deiner Sammlung.`
+    : `This set already exists ${dupes.length}× in your collection.`;
+  text.textContent = msg;
+  callout.classList.remove('hidden');
+}
+
+// ── Candidate selection ──────────────────────────────────────────────────
+function showCandidates(candidates) {
+  const list = document.getElementById('candidate-list');
+  list.innerHTML = '';
+  candidates.forEach(c => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-secondary';
+    btn.style.justifyContent = 'flex-start';
+    btn.textContent = `${c.brand || ''} ${c.set_number || ''} — ${c.name || ''}`;
+    btn.onclick = () => {
+      applyPrefill(c);
+      document.getElementById('candidate-modal').classList.add('hidden');
+    };
+    list.appendChild(btn);
+  });
+  document.getElementById('candidate-modal').classList.remove('hidden');
+}
+
+// ── Form state persistence (survives language switch) ────────────────────
+const _FIELD_IDS = ['f-brand','f-setnumber','f-name','f-parts','f-condition',
+  'f-location','f-date','f-price','f-theme','f-year','f-minifigs','f-ean','f-note'];
+
+function _saveAddState() {
+  const data = {};
+  _FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) data[id] = el.value; });
+  data._ean   = document.getElementById('ean-input').value;
+  data._brand = document.getElementById('brand-input').value;
+  data._setno = document.getElementById('setnumber-input').value;
+  data._wimg  = document.getElementById('web-images-json').value;
+  data._bsid  = document.getElementById('brickset-set-id').value;
+  sessionStorage.setItem('bst_add_state', JSON.stringify(data));
+}
+
+function _restoreAddState() {
+  const raw = sessionStorage.getItem('bst_add_state');
+  if (!raw) return;
+  sessionStorage.removeItem('bst_add_state');
+  const data = JSON.parse(raw);
+  _FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && data[id] != null) el.value = data[id]; });
+  if (data._ean)   document.getElementById('ean-input').value          = data._ean;
+  if (data._brand) document.getElementById('brand-input').value        = data._brand;
+  if (data._setno) document.getElementById('setnumber-input').value    = data._setno;
+  if (data._bsid)  document.getElementById('brickset-set-id').value    = data._bsid;
+  if (data._wimg) {
+    document.getElementById('web-images-json').value = data._wimg;
+    const urls = JSON.parse(data._wimg || '[]');
+    if (urls.length) renderWebImages(urls);
+  }
+}
+
+document.querySelector('form[action="/set-lang"]')?.addEventListener('submit', _saveAddState);
+_restoreAddState();
+
+// ── Photos ───────────────────────────────────────────────────────────────
+async function handleFiles(files) {
+  for (const file of files) await uploadPhoto(file);
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('photo-drop').classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+}
+async function uploadPhoto(file) {
+  const sid  = document.getElementById('session-id').value;
+  const body = new FormData();
+  body.append('file', file);
+  body.append('session_id', sid);
+  const r    = await fetch('/api/upload', { method: 'POST', body });
+  const data = await r.json();
+  if (data.ok) addPhotoThumb(data.path);
+  else alert(data.error);
+}
+function addPhotoThumb(path) {
+  const wrap  = document.getElementById('photo-preview');
+  const thumb = document.createElement('div');
+  thumb.className = 'photo-thumb';
+  thumb.innerHTML = `<img src="/${path}">
+    <button type="button" class="photo-thumb__remove" onclick="this.parentElement.remove()">×</button>`;
+  wrap.appendChild(thumb);
+}
+
+// ── Form submit ──────────────────────────────────────────────────────────
+async function submitSet(e) {
+  e.preventDefault();
+  const form   = document.getElementById('set-form');
+  const body   = new FormData(form);
+
+  // Check duplicates first via live duplicate check
+  const brand  = document.getElementById('f-brand').value.trim();
+  const setnum = document.getElementById('f-setnumber').value.trim();
+
+  const r    = await fetch('/api/sets', { method: 'POST', body });
+  const data = await r.json();
+
+  if (data.status === 'complete' || data.status === 'draft') {
+    // Success — offer Brickset sync if LEGO + has setID
+    const bsId = document.getElementById('brickset-set-id').value;
+    if (bsId && brand.toLowerCase() === 'lego') {
+      const lang = document.documentElement.lang;
+      const msg  = lang === 'de'
+        ? 'Set gespeichert. Mit Brickset synchronisieren?'
+        : 'Set saved. Sync to Brickset?';
+      if (confirm(msg)) {
+        await fetch(`/api/sets/${data.id}/sync-brickset`, { method: 'POST' });
+      }
+    }
+    window.location.href = '/';
+  }
+}
+</script>
+{% endblock %}

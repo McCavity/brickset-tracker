@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="{{ lang }}" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Brickset Tracker{% endblock %}</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css?v=2">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <nav class="site-header__nav">
+      <a href="/" class="site-header__brand">
+        <img src="/static/logo-wordmark.svg" alt="Verklemmt und zugenäht!">
+      </a>
+      <div class="site-header__actions">
+        <form action="/set-lang" method="post" style="display:inline">
+          {% if lang == "de" %}
+            <input type="hidden" name="lang" value="en">
+          {% else %}
+            <input type="hidden" name="lang" value="de">
+          {% endif %}
+          <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+          <button type="submit" class="lang-toggle">{{ 'EN' if lang == 'de' else 'DE' }}</button>
+        </form>
+      </div>
+    </nav>
+    <h1 class="site-header__title">{% block header_title %}{% endblock %}</h1>
+  </div>
+</header>
+
+<main>
+  <div class="page-wrap">
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+<div class="modal-scrim hidden" id="delete-modal">
+  <div class="modal">
+    <h2>{% if lang == "de" %}Set löschen?{% else %}Delete set?{% endif %}</h2>
+    <p id="delete-modal-text"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">
+        {% if lang == "de" %}Abbrechen{% else %}Cancel{% endif %}
+      </button>
+      <button class="btn btn-danger" id="delete-confirm-btn">
+        {% if lang == "de" %}Löschen{% else %}Delete{% endif %}
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>
+  lucide.createIcons();
+
+  // Delete modal
+  let _deleteId = null;
+  function openDeleteModal(id, name) {
+    _deleteId = id;
+    const lang = document.documentElement.lang;
+    document.getElementById('delete-modal-text').textContent =
+      lang === 'de'
+        ? `„${name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`
+        : `Really delete "${name}"? This action cannot be undone.`;
+    document.getElementById('delete-modal').classList.remove('hidden');
+  }
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.add('hidden');
+    _deleteId = null;
+  }
+  document.getElementById('delete-confirm-btn').addEventListener('click', async () => {
+    if (!_deleteId) return;
+    await fetch(`/api/sets/${_deleteId}/delete`, { method: 'POST' });
+    window.location.href = '/';
+  });
+  document.getElementById('delete-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeDeleteModal();
+  });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

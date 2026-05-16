@@ -1,0 +1,71 @@
+{
+  "nav": {
+    "add_set":    "Add Set",
+    "collection": "Collection",
+    "settings":   "Settings"
+  },
+  "add": {
+    "title":           "Add New Set",
+    "scan_ean":        "Scan / enter EAN",
+    "brand":           "Brand",
+    "set_number":      "Set Number",
+    "name":            "Name",
+    "part_count":      "Part Count",
+    "condition":       "Condition",
+    "location":        "Location",
+    "date_of_purchase":"Date of Purchase",
+    "note":            "Note",
+    "theme":           "Theme",
+    "release_year":    "Release Year",
+    "minifigs":        "Minifigures",
+    "price_paid":      "Price Paid (€)",
+    "save":            "Save",
+    "save_draft":      "Save as Draft",
+    "cancel":          "Cancel",
+    "lookup":          "Fetch Data",
+    "sync_brickset":   "Sync to Brickset",
+    "photos":          "Photos",
+    "photo_hint":      "Upload or drag photos here",
+    "photo_formats":   "JPG · PNG · WEBP · HEIC · max. 20 MB"
+  },
+  "condition": {
+    "ovp":      "Sealed — bought, unopened",
+    "im_bau":   "In Progress — started, lying around",
+    "gebaut":   "Built — complete, on display",
+    "abgebaut": "Disassembled — taken apart, in bags/boxes",
+    "verkauft": "Sold — no longer owned"
+  },
+  "errors": {
+    "required_fields":    "Required fields missing: {fields}",
+    "rate_limit":         "Daily limit for merlinssteine.de reached ({used}/{limit}). Please enter manually.",
+    "not_found":          "Set not found. Please enter manually.",
+    "scrape_error":       "Error fetching data. Please enter manually.",
+    "duplicate_warning":  "This set already exists {count}× in your collection.",
+    "delete_confirm":     "Really delete this set? This action cannot be undone.",
+    "ean_unresolved":     "EAN not recognised. Please enter brand and set number manually.",
+    "ean_ambiguous":      "Multiple matches for this EAN. Please select the correct set."
+  },
+  "edit": {
+    "title":      "Edit Set",
+    "save":       "Save Changes",
+    "add_photos": "Add more photos"
+  },
+  "list": {
+    "title":       "My Collection",
+    "sort_by":     "Sort by",
+    "sort_date":   "Purchase Date",
+    "sort_name":   "Name",
+    "sort_brand":  "Brand",
+    "sort_parts":  "Part Count",
+    "sort_price":  "Price",
+    "draft_badge": "Draft",
+    "empty":       "No sets yet. Add your first set!"
+  },
+  "quota": {
+    "remaining": "Merlinssteine: {remaining}/{limit} today"
+  },
+  "lang": {
+    "de": "Deutsch",
+    "en": "English"
+  }
+}
