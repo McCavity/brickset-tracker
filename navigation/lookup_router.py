@@ -60,49 +60,52 @@ async def route_lookup(
 
 
 async def _flow1(brand: str, set_number: str, ean: str | None = None) -> dict:
-    """Flow 1: scrape merlinssteine.de, optionally enrich from Brickset."""
-    slug   = brand_to_slug(brand)
-    result = await scrape_set(slug, set_number)
+    """Flow 1: gather metadata from merlinssteine.de and (for LEGO) Brickset.
+
+    Both sources are tried independently for LEGO. merlinssteine wins for
+    fields it returns; Brickset fills any gaps and is the sole source of
+    ``brickset_set_id``. Status is ``success`` if at least one source
+    returned data — so a 2026 LEGO set Brickset knows but merlinssteine
+    doesn't will still come back populated.
+    """
+    slug = brand_to_slug(brand)
 
     prefill: dict = {"brand": brand, "set_number": set_number}
     if ean:
         prefill["ean"] = ean
 
-    if result["status"] == "success":
-        prefill.update({
-            "name":         result.get("name"),
-            "part_count":   result.get("part_count"),
-            "theme":        result.get("theme"),
-            "release_year": result.get("release_year"),
-            "price_paid":   result.get("price"),
-            "ean":          result.get("ean") or ean,
-            "web_images":   [result["image_url"]] if result.get("image_url") else [],
-            "brand":        result.get("brand_full") or brand,
-        })
-        # Cache the EAN if we just learned it
-        if result.get("ean") and not ean:
-            _ean_cache_write(result["ean"], prefill["brand"], set_number, "merlinssteine")
+    # ── merlinssteine.de scrape ─────────────────────────────────────
+    ms_result    = await scrape_set(slug, set_number)
+    ms_succeeded = ms_result["status"] == "success"
 
-        # LEGO enrichment via Brickset
-        if "lego" in brand.lower():
-            bs = await fetch_set(set_number)
-            if bs["status"] == "found":
-                prefill.setdefault("theme",        bs.get("theme"))
-                prefill.setdefault("release_year", bs.get("year"))
-                prefill["brickset_set_id"] = bs.get("set_id")
-                if not prefill.get("web_images") and bs.get("image_url"):
-                    prefill["web_images"] = [bs["image_url"]]
+    if ms_succeeded:
+        _merge_from_merlinssteine(prefill, ms_result)
+        if ms_result.get("ean") and not ean:
+            _ean_cache_write(ms_result["ean"], prefill["brand"], set_number, "merlinssteine")
 
+    # ── Brickset enrichment (LEGO only — always tried) ─────────────
+    bs_succeeded = False
+    if "lego" in brand.lower():
+        bs_result = await fetch_set(set_number)
+        if bs_result["status"] == "found":
+            _merge_from_brickset(prefill, bs_result)
+            if bs_result.get("ean") and not prefill.get("ean"):
+                _ean_cache_write(bs_result["ean"], prefill["brand"], set_number, "brickset")
+            bs_succeeded = True
+
+    # ── Compose response ───────────────────────────────────────────
+    if ms_succeeded or bs_succeeded:
         return {"status": "success", "prefill": prefill}
 
-    if result["status"] == "rate_limit":
+    # Both sources failed — surface merlinssteine's status as the user-facing reason
+    if ms_result["status"] == "rate_limit":
         return {
             "status":  "rate_limit",
             "prefill": prefill,
             "message": "Tageslimit für merlinssteine.de erreicht. Bitte manuell eingeben.",
         }
 
-    if result["status"] == "not_found":
+    if ms_result["status"] == "not_found":
         return {
             "status":  "not_found",
             "prefill": prefill,
@@ -114,6 +117,50 @@ async def _flow1(brand: str, set_number: str, ean: str | None = None) -> dict:
         "prefill": prefill,
         "message": "Fehler beim Abrufen der Daten. Bitte manuell eingeben.",
     }
+
+
+def _merge_from_merlinssteine(prefill: dict, result: dict) -> None:
+    """Copy merlinssteine fields into prefill, only when they have truthy values."""
+    field_map = (
+        ("name",         result.get("name")),
+        ("part_count",   result.get("part_count")),
+        ("theme",        result.get("theme")),
+        ("release_year", result.get("release_year")),
+        ("price_paid",   result.get("price")),
+    )
+    for key, value in field_map:
+        if value:
+            prefill[key] = value
+
+    if result.get("ean"):
+        prefill["ean"] = result["ean"]
+    if result.get("image_url"):
+        prefill["web_images"] = [result["image_url"]]
+    if result.get("brand_full"):
+        prefill["brand"] = result["brand_full"]
+
+
+def _merge_from_brickset(prefill: dict, bs: dict) -> None:
+    """Copy Brickset fields into prefill, filling only the gaps merlinssteine left.
+
+    `brickset_set_id` is always set (Brickset is the authoritative source).
+    """
+    field_map = (
+        ("name",         bs.get("name")),
+        ("part_count",   bs.get("pieces")),
+        ("theme",        bs.get("theme")),
+        ("release_year", bs.get("year")),
+    )
+    for key, value in field_map:
+        if value and not prefill.get(key):
+            prefill[key] = value
+
+    if bs.get("ean") and not prefill.get("ean"):
+        prefill["ean"] = bs["ean"]
+    if not prefill.get("web_images") and bs.get("image_url"):
+        prefill["web_images"] = [bs["image_url"]]
+
+    prefill["brickset_set_id"] = bs.get("set_id")
 
 
 def _ean_cache_lookup(ean: str) -> dict | None:
