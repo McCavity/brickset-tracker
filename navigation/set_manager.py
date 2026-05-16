@@ -79,25 +79,25 @@ def get_sets(
     sort_by: str = "date_of_purchase",
     sort_dir: str = "DESC",
     q: str | None = None,
+    brands: list[str] | None = None,
+    conditions: list[str] | None = None,
+    themes: list[str] | None = None,
+    statuses: list[str] | None = None,
 ) -> list[dict]:
-    """Return all set records matching the given filters."""
+    """Return all set records matching the given filters.
+
+    q: case-insensitive substring match across text-ish fields.
+    brands/conditions/themes/statuses: OR within each list, AND across lists.
+    Empty list or None means no filter on that dimension.
+    """
     if sort_by not in SORT_ALLOWLIST:
         sort_by = "date_of_purchase"
     sort_dir = "ASC" if sort_dir.upper() == "ASC" else "DESC"
 
-    where_clauses: list[str] = []
-    params: list = []
-
-    if q:
-        searchable_columns = [
-            "name", "brand", "set_number", "ean", "theme", "note",
-            "location", "condition",
-            "CAST(release_year AS TEXT)", "CAST(part_count AS TEXT)",
-        ]
-        wrapped = [f"py_lower({col}) LIKE py_lower(?)" for col in searchable_columns]
-        where_clauses.append("(" + " OR ".join(wrapped) + ")")
-        params.extend([f"%{q}%"] * len(searchable_columns))
-
+    where_clauses, params = _build_filter_clauses(
+        q=q, brands=brands, conditions=conditions,
+        themes=themes, statuses=statuses,
+    )
     where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
     with get_connection() as conn:
@@ -113,6 +113,42 @@ def get_sets(
         ).fetchall()
 
     return [_row_to_dict(r) for r in rows]
+
+
+def _build_filter_clauses(
+    *,
+    q: str | None = None,
+    brands: list[str] | None = None,
+    conditions: list[str] | None = None,
+    themes: list[str] | None = None,
+    statuses: list[str] | None = None,
+) -> tuple[list[str], list]:
+    """Build the WHERE-clause fragments and parameter list for a filtered query."""
+    where_clauses: list[str] = []
+    params: list = []
+
+    if q:
+        searchable_columns = [
+            "name", "brand", "set_number", "ean", "theme", "note",
+            "location", "condition",
+            "CAST(release_year AS TEXT)", "CAST(part_count AS TEXT)",
+        ]
+        wrapped = [f"py_lower({col}) LIKE py_lower(?)" for col in searchable_columns]
+        where_clauses.append("(" + " OR ".join(wrapped) + ")")
+        params.extend([f"%{q}%"] * len(searchable_columns))
+
+    for column, values in (
+        ("brand", brands),
+        ("condition", conditions),
+        ("theme", themes),
+        ("status", statuses),
+    ):
+        if values:
+            placeholders = ",".join("?" * len(values))
+            where_clauses.append(f"{column} IN ({placeholders})")
+            params.extend(values)
+
+    return where_clauses, params
 
 
 def delete_set(set_id: int) -> None:
