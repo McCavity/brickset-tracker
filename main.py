@@ -206,6 +206,62 @@ async def api_import_fetch(request: Request):
     return templates.TemplateResponse(request, "_brickset_import_preview.html", context=ctx)
 
 
+@app.post("/api/import/brickset/commit")
+async def api_import_commit(request: Request):
+    """Commit a Brickset import. Accepts JSON payload {"rows": [...]}.
+
+    Each row must have: brand, set_number, brickset_set_id, name, import_qty
+    (non-negative int), local_ids_missing_bs_id (list[int]).
+    Optional: part_count, theme, release_year, ean, web_images (list).
+
+    Returns a 303 redirect to /?imported=N&backfilled=K.
+    """
+    from navigation.set_manager import commit_import_rows
+
+    body = await request.json()
+    raw_rows = body.get("rows") or []
+
+    sanitised = []
+    for row in raw_rows:
+        # Validate required fields
+        if not row.get("brand") or not row.get("set_number"):
+            continue
+        if not row.get("brickset_set_id"):
+            continue
+
+        # Clamp import_qty to non-negative int
+        try:
+            qty = max(0, int(row.get("import_qty") or 0))
+        except (TypeError, ValueError):
+            qty = 0
+
+        # Schema requires part_count NOT NULL; default missing/invalid to 0
+        try:
+            part_count = int(row["part_count"]) if row.get("part_count") is not None else 0
+        except (TypeError, ValueError):
+            part_count = 0
+
+        sanitised.append({
+            "brand":                   str(row["brand"]),
+            "set_number":              str(row["set_number"]),
+            "name":                    row.get("name") or "",
+            "part_count":              part_count,
+            "theme":                   row.get("theme"),
+            "release_year":            row.get("release_year"),
+            "ean":                     row.get("ean"),
+            "web_images":              row.get("web_images") or [],
+            "brickset_set_id":         int(row["brickset_set_id"]),
+            "import_qty":              qty,
+            "local_ids_missing_bs_id": [int(x) for x in (row.get("local_ids_missing_bs_id") or [])],
+        })
+
+    result = commit_import_rows(sanitised)
+    return RedirectResponse(
+        f"/?imported={result['created']}&backfilled={result['backfilled']}",
+        status_code=303,
+    )
+
+
 # ── API ────────────────────────────────────────────────────────────────────
 
 @app.post("/api/lookup")
