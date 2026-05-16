@@ -1,0 +1,12 @@
+{# Placeholder. Replaced by Task 11. #}
+<div id="results-region" data-total="{{ total }}" data-shown="{{ sets|length }}">
+{% if sets %}
+  <ul class="set-list">
+    {% for s in sets %}
+    <li class="set-card" data-set-id="{{ s.id }}">{{ s.brand }} {{ s.set_number }} — {{ s.name }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="empty-state">No sets match</div>
+{% endif %}
+</div>

@@ -85,6 +85,35 @@ async def index(
     ))
 
 
+@app.get("/api/sets/filter", response_class=HTMLResponse)
+async def api_filter(
+    request: Request,
+    sort: str = "date_of_purchase",
+    dir: str = "DESC",
+    q: str | None = None,
+    brand: list[str] = Query(default_factory=list),
+    condition: list[str] = Query(default_factory=list),
+    theme: list[str] = Query(default_factory=list),
+    status: list[str] = Query(default_factory=list),
+):
+    """Returns just the results region as an HTML partial — for live filtering."""
+    q_clean = (q or "").strip()[:200] or None
+
+    sets = get_sets(
+        sort_by=sort, sort_dir=dir, q=q_clean,
+        brands=brand, conditions=condition,
+        themes=theme, statuses=status,
+    )
+    total = count_all_sets()
+
+    return templates.TemplateResponse(request, "_results_partial.html", context=_ctx(
+        request, sets=sets, total=total,
+        active_filters={"brand": brand, "condition": condition,
+                        "theme": theme, "status": status},
+        q=q_clean or "",
+    ))
+
+
 @app.get("/add", response_class=HTMLResponse)
 async def add_page(request: Request):
     return templates.TemplateResponse(request, "add.html", context=_ctx(
