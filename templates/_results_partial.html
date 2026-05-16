@@ -1,12 +1,122 @@
-{# Placeholder. Replaced by Task 11. #}
-<div id="results-region" data-total="{{ total }}" data-shown="{{ sets|length }}">
-{% if sets %}
-  <ul class="set-list">
+{# Results region — included by index.html and returned by /api/sets/filter #}
+{% set total_active_filters =
+    (active_filters.brand | length) +
+    (active_filters.condition | length) +
+    (active_filters.theme | length) +
+    (active_filters.status | length) %}
+{% set filters_active = (q | length > 0) or (total_active_filters > 0) %}
+
+<div id="results-region" data-total="{{ total }}" data-shown="{{ sets | length }}">
+
+  {% if filters_active and sets %}
+  <p class="results-count">
+    <i data-lucide="filter" style="width:13px;height:13px;vertical-align:-2px"></i>
+    {{ t('list.results_count', shown=sets|length, total=total) }}
+  </p>
+  {% endif %}
+
+  {% if sets %}
+
+  {# Condition colour map — kept here for partial independence #}
+  {% set cond_class = {
+    'ovp':      'cond-ovp',
+    'im_bau':   'cond-im_bau',
+    'gebaut':   'cond-gebaut',
+    'abgebaut': 'cond-abgebaut',
+    'verkauft': 'cond-verkauft',
+  } %}
+
+  <div class="set-list">
     {% for s in sets %}
-    <li class="set-card" data-set-id="{{ s.id }}">{{ s.brand }} {{ s.set_number }} — {{ s.name }}</li>
+    {% set thumb = '' %}
+    {% if s.own_photos %}{% set thumb = '/' ~ s.own_photos[0] %}
+    {% elif s.web_images %}{% set thumb = '/api/proxy-image?url=' ~ (s.web_images[0] | urlencode) %}
+    {% endif %}
+    <div class="set-card">
+
+      <div class="set-card__thumb">
+        {% if thumb %}
+          <img src="{{ thumb }}" alt="" loading="lazy">
+        {% else %}
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="20" cy="21" r="6"/><circle cx="36" cy="21" r="6"/>
+            <rect x="10" y="27" width="36" height="16" rx="3"/>
+          </svg>
+        {% endif %}
+      </div>
+
+      <div class="set-card__left">
+        <div class="set-card__kicker">
+          {{ s.brand | upper }} · <span class="mono">{{ s.set_number }}</span>
+        </div>
+        <div class="set-card__name" title="{{ s.name }}">{{ s.name }}</div>
+        <div class="set-card__meta">
+          {% if s.part_count %}
+            <span>{{ "{:,}".format(s.part_count).replace(",", ".") }} {{ t('list.sort_parts') | lower }}</span>
+          {% endif %}
+          {% if s.price_paid %}
+            <span>{{ "%.2f"|format(s.price_paid) }} €</span>
+          {% endif %}
+          {% if s.date_of_purchase %}
+            <span class="mono">{{ s.date_of_purchase }}</span>
+          {% endif %}
+          {% if s.theme %}
+            <span>{{ s.theme }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="set-card__right">
+        {% if s.status == 'draft' %}
+          <span class="draft-badge">{{ t('list.draft_badge') }}</span>
+        {% endif %}
+        {% if s.condition %}
+          <span class="condition-tag {{ cond_class.get(s.condition, '') }}">
+            {{ t('condition.' ~ s.condition) }}
+          </span>
+        {% endif %}
+        <div class="set-card__actions">
+          {% if s.brickset_set_id and s.brand | lower == 'lego' %}
+          <button class="btn btn-secondary btn-sm" title="{{ t('add.sync_brickset') }}"
+                  onclick="syncBrickset({{ s.id }}, this)">
+            <i data-lucide="refresh-cw" style="width:13px;height:13px"></i>
+          </button>
+          {% endif %}
+          <a href="/sets/{{ s.id }}/edit" class="btn btn-ghost btn-sm" title="{{ t('edit.title') }}">
+            <i data-lucide="pencil" style="width:13px;height:13px"></i>
+          </a>
+          <button class="btn btn-ghost btn-sm"
+                  onclick="openDeleteModal({{ s.id }}, '{{ s.name | replace("'", "\\'") }}')">
+            <i data-lucide="trash-2" style="width:13px;height:13px"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
     {% endfor %}
-  </ul>
-{% else %}
-  <div class="empty-state">No sets match</div>
-{% endif %}
+  </div>
+
+  {% elif filters_active %}
+
+  {# Filtered to zero — distinct from "collection is empty" #}
+  <div class="empty-state">
+    <h2>{{ t('list.no_matches') }}</h2>
+    <a href="/" class="btn btn-ghost" style="margin-top:16px">
+      <i data-lucide="x" style="width:15px;height:15px"></i>
+      {{ t('list.filter_clear_all') }}
+    </a>
+  </div>
+
+  {% else %}
+
+  {# Genuinely empty collection #}
+  <div class="empty-state">
+    <h2>{{ t('list.empty') }}</h2>
+    <a href="/add" class="btn btn-primary" style="margin-top:16px">
+      <i data-lucide="plus"></i> {{ t('nav.add_set') }}
+    </a>
+  </div>
+
+  {% endif %}
+
 </div>
