@@ -1,0 +1,90 @@
+{# Brickset import preview partial — returned by POST /api/import/brickset/fetch #}
+<div id="import-preview-content">
+
+  {% if fetch_status == "quota_exceeded" %}
+    <div class="callout callout-warn">
+      <span class="callout__mark">!</span>
+      <p>{{ t('import.error_quota') }}</p>
+    </div>
+
+  {% elif fetch_status == "error" %}
+    <div class="callout callout-error">
+      <span class="callout__mark">×</span>
+      <p>{{ t('import.error_fetch', message=fetch_message or '') }}</p>
+    </div>
+
+  {% elif not rows %}
+    <div class="empty-state">
+      <h2>{{ t('import.no_sets') }}</h2>
+    </div>
+
+  {% else %}
+    <p class="import-summary" id="import-summary"
+       data-total-rows="{{ rows | length }}"
+       data-will-create="{{ totals.will_create }}"
+       data-will-backfill="{{ totals.will_backfill }}">
+      {{ t('import.summary',
+            bs_total=totals.bs_total,
+            will_create=totals.will_create,
+            sets_count=totals.sets_count,
+            will_backfill=totals.will_backfill) }}
+    </p>
+
+    <form id="import-form" onsubmit="return submitImport(event)">
+      <div class="import-preview-list">
+        {% for row in rows %}
+        <div class="import-preview-row" data-row-index="{{ loop.index0 }}">
+          <label class="import-preview-row__pick">
+            <input type="checkbox" class="import-row-check" checked>
+            <div>
+              <div class="import-preview-row__kicker">
+                LEGO · <span class="mono">{{ row.set_number }}</span>
+              </div>
+              <div class="import-preview-row__name">{{ row.name }}</div>
+              <div class="import-preview-row__meta">
+                {% if row.theme %}<span>{{ row.theme }}</span>{% endif %}
+                {% if row.release_year %}<span class="mono">{{ row.release_year }}</span>{% endif %}
+                {% if row.part_count %}<span>{{ row.part_count }}</span>{% endif %}
+              </div>
+            </div>
+          </label>
+
+          <div class="import-preview-row__qty">
+            <span>{{ t('import.col_bs_qty') }}: <strong>{{ row.bs_qty }}</strong></span>
+            <span>{{ t('import.col_local_qty') }}: <strong>{{ row.local_qty }}</strong></span>
+            <label>
+              {{ t('import.col_import') }}:
+              <input type="number" class="import-qty-input" min="0"
+                     value="{{ row.default_import_qty }}">
+            </label>
+          </div>
+
+          {% if row.hint_key %}
+            <div class="import-preview-row__hint">
+              {{ t(row.hint_key, diff=row.local_qty - row.bs_qty if row.local_qty > row.bs_qty else 0) }}
+            </div>
+          {% endif %}
+
+          {# Hidden payload — server commits using these values #}
+          <script type="application/json" class="import-row-payload">
+            {{ row.payload_json | safe }}
+          </script>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="form-actions">
+        <a href="/" class="btn btn-ghost">
+          <i data-lucide="x" style="width:15px;height:15px"></i>
+          {{ t('add.cancel') }}
+        </a>
+        <span class="spacer"></span>
+        <button type="submit" class="btn btn-primary" id="import-submit">
+          <i data-lucide="download" style="width:15px;height:15px"></i>
+          <span id="import-submit-label">{{ t('import.submit_button', n=totals.will_create) }}</span>
+        </button>
+      </div>
+    </form>
+  {% endif %}
+
+</div>

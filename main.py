@@ -127,6 +127,85 @@ async def import_page(request: Request):
     return templates.TemplateResponse(request, "import_brickset.html", context=_ctx(request))
 
 
+@app.post("/api/import/brickset/fetch", response_class=HTMLResponse)
+async def api_import_fetch(request: Request):
+    """Fetch the user's Brickset collection and return a preview partial."""
+    import json
+    from execution.brickset import fetch_owned_collection
+    from navigation.set_manager import count_owned, find_local_rows_missing_brickset_id
+
+    result = await fetch_owned_collection()
+
+    ctx = _ctx(request, fetch_status=result["status"])
+
+    if result["status"] != "ok":
+        ctx["fetch_message"] = result.get("message", "")
+        ctx["rows"] = []
+        ctx["totals"] = {"bs_total": 0, "will_create": 0, "sets_count": 0, "will_backfill": 0}
+        return templates.TemplateResponse(request, "_brickset_import_preview.html", context=ctx)
+
+    rows = []
+    will_create = 0
+    will_backfill = 0
+    for s in result["sets"]:
+        # Defensive: skip Brickset rows missing essential identifying fields
+        if not s.get("set_number") or not s.get("set_id"):
+            continue
+
+        brand = "LEGO"
+        set_number = s["set_number"]
+        local_qty = count_owned(brand, set_number)
+        missing_ids = find_local_rows_missing_brickset_id(brand, set_number)
+
+        bs_qty = s.get("qty_owned") or 1
+        default_import_qty = max(0, bs_qty - local_qty)
+        will_create += default_import_qty
+        will_backfill += len(missing_ids)
+
+        if local_qty == 0:
+            hint_key = None
+        elif local_qty < bs_qty:
+            hint_key = "import.hint_partial"
+        elif local_qty == bs_qty:
+            hint_key = "import.hint_already_covered"
+        else:  # local_qty > bs_qty
+            hint_key = "import.hint_local_richer"
+
+        payload = {
+            "brand":           brand,
+            "set_number":      set_number,
+            "name":            s.get("name") or "",
+            "part_count":      s.get("pieces"),
+            "theme":           s.get("theme"),
+            "release_year":    s.get("year"),
+            "ean":             s.get("ean"),
+            "web_images":      [s["image_url"]] if s.get("image_url") else [],
+            "brickset_set_id": s["set_id"],
+            "local_ids_missing_bs_id": missing_ids,
+        }
+        rows.append({
+            "set_number":         set_number,
+            "name":               s.get("name") or "",
+            "theme":              s.get("theme"),
+            "release_year":       s.get("year"),
+            "part_count":         s.get("pieces"),
+            "bs_qty":             bs_qty,
+            "local_qty":          local_qty,
+            "default_import_qty": default_import_qty,
+            "hint_key":           hint_key,
+            "payload_json":       json.dumps(payload),
+        })
+
+    ctx["rows"] = rows
+    ctx["totals"] = {
+        "bs_total":      sum(r["bs_qty"] for r in rows),
+        "will_create":   will_create,
+        "sets_count":    len([r for r in rows if r["default_import_qty"] > 0]),
+        "will_backfill": will_backfill,
+    }
+    return templates.TemplateResponse(request, "_brickset_import_preview.html", context=ctx)
+
+
 # ── API ────────────────────────────────────────────────────────────────────
 
 @app.post("/api/lookup")
