@@ -116,6 +116,7 @@
 
 {% block scripts %}
 <script>
+// ── Existing Brickset sync handler ────────────────────────────────────────
 async function syncBrickset(id, btn) {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
@@ -128,5 +129,74 @@ async function syncBrickset(id, btn) {
     : '<i data-lucide="alert-circle" style="width:13px;height:13px"></i>';
   lucide.createIcons();
 }
+
+// ── Live search + filter ──────────────────────────────────────────────────
+(function () {
+  const searchInput = document.getElementById('search-input');
+  const searchClear = document.getElementById('search-clear');
+  const filterPanel = document.getElementById('filter-panel');
+
+  if (!searchInput || !filterPanel) return;
+
+  let debounceTimer = null;
+
+  function currentQueryString() {
+    const params = new URLSearchParams();
+    const q = searchInput.value.trim();
+    if (q) params.set('q', q);
+    filterPanel.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+      params.append(cb.name, cb.value);
+    });
+    // Preserve sort if present in current URL
+    const currentParams = new URLSearchParams(window.location.search);
+    if (currentParams.has('sort')) params.set('sort', currentParams.get('sort'));
+    if (currentParams.has('dir'))  params.set('dir',  currentParams.get('dir'));
+    return params.toString();
+  }
+
+  async function applyFilters() {
+    const qs = currentQueryString();
+    // Update URL (no reload)
+    const newUrl = qs ? `/?${qs}` : '/';
+    history.replaceState(null, '', newUrl);
+    // Fetch the new results partial
+    const r = await fetch(`/api/sets/filter${qs ? '?' + qs : ''}`);
+    if (!r.ok) return;
+    const html = await r.text();
+    // Swap the entire #results-region (the partial's outer div has the same id).
+    // We re-query each call because the previous div was replaced, not mutated.
+    const oldHost = document.getElementById('results-region');
+    if (oldHost) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      const fresh = tmp.querySelector('#results-region');
+      if (fresh) {
+        oldHost.replaceWith(fresh);
+        lucide.createIcons();
+      }
+    }
+    if (searchClear) searchClear.classList.toggle('hidden', !searchInput.value);
+  }
+
+  // Search input — debounced
+  searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(applyFilters, 250);
+  });
+
+  // Clear search button
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      applyFilters();
+      searchInput.focus();
+    });
+  }
+
+  // Checkbox changes — immediate, no debounce
+  filterPanel.addEventListener('change', (e) => {
+    if (e.target.matches('input[type="checkbox"]')) applyFilters();
+  });
+})();
 </script>
 {% endblock %}
