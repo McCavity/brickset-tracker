@@ -146,8 +146,8 @@ async def fetch_owned_collection() -> dict:
 Implementation notes:
 - `pageSize=100` (conservative; well within Brickset's per-page max). For 30 sets the user only needs 1 page.
 - Brickset's getSets accepts both `params` (a JSON-stringified dict) and an `userHash`. With `owned=1` in params it returns owned sets; with `userHash` it's the user's collection.
-- Pagination: loop with `pageNumber=1,2,3,...` until `len(returned_sets) < pageSize`.
-- Each page consumes one Brickset quota point.
+- Pagination: loop with `pageNumber=1,2,3,...` until `len(returned_sets) < pageSize`. The termination condition handles `len == 0` (covers the "exact multiple of pageSize" edge case — the next page returns 0 results and the loop exits).
+- Each page consumes one Brickset quota point. When the total count happens to be an exact multiple of `pageSize`, one extra (empty) API call is made. Acceptable for V1; a future optimisation could inspect Brickset's `matches` field for the precise total.
 
 Each returned set is mapped through the existing `_map_set` helper plus the new `qtyOwned` extraction:
 
