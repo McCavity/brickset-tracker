@@ -116,6 +116,22 @@ def _map_set(s: dict) -> dict:
     }
 
 
+def _map_owned_set(s: dict) -> dict:
+    """Extension of _map_set that also extracts qtyOwned from the collection
+    object Brickset returns when the request includes the user's userHash.
+
+    The 'set_number' returned here is the bare/variant-suffixed number from
+    Brickset's 'number' field — used for matching against local rows by
+    brand+set_number.
+    """
+    base = _map_set(s)
+    coll = s.get("collection") or {}
+    qty  = coll.get("qtyOwned")
+    base["qty_owned"]   = 1 if qty is None else qty
+    base["set_number"]  = s.get("number")
+    return base
+
+
 def _log_sync(set_id: int, qty: int, status: str) -> None:
     Path(".tmp").mkdir(exist_ok=True)
     with open(".tmp/brickset_sync.log", "a") as f:
