@@ -23,6 +23,7 @@ BRAND_SLUGS: dict[str, str] = {
     "cada":       "cada",
     "lumibricks": "lumi",
     "funwhole":   "lumi",   # Lumibricks former name
+    "pantasy":    "pant",
 }
 
 UA = "BricksetTracker/1.0 (personal collection tool; single-user)"
