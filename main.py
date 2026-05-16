@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from datetime import date
 from urllib.parse import quote
 
-from fastapi import FastAPI, Form, Request, UploadFile, File
+from fastapi import FastAPI, Form, Query, Request, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -17,7 +17,8 @@ from execution.photos import cleanup_stale_staging, upload_to_staging
 from execution.rate_limit import get_quota_status
 from navigation.lookup_router import route_lookup
 from navigation.set_manager import (
-    CONDITION_VALUES, count_owned, delete_set, get_brands, get_set, get_sets, save_set, update_set
+    CONDITION_VALUES, count_all_sets, count_owned, delete_set, get_brands,
+    get_facet_counts, get_set, get_sets, save_set, update_set
 )
 from execution.brickset import sync_owned
 
@@ -51,10 +52,35 @@ def _ctx(request: Request, **kwargs) -> dict:
 # ── Pages ──────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request, sort: str = "date_of_purchase", dir: str = "DESC"):
-    sets = get_sets(sort_by=sort, sort_dir=dir)
+async def index(
+    request: Request,
+    sort: str = "date_of_purchase",
+    dir: str = "DESC",
+    q: str | None = None,
+    brand: list[str] = Query(default_factory=list),
+    condition: list[str] = Query(default_factory=list),
+    theme: list[str] = Query(default_factory=list),
+    status: list[str] = Query(default_factory=list),
+):
+    # Sanitise search
+    q_clean = (q or "").strip()[:200] or None
+
+    sets = get_sets(
+        sort_by=sort, sort_dir=dir, q=q_clean,
+        brands=brand, conditions=condition,
+        themes=theme, statuses=status,
+    )
+    facets = get_facet_counts(
+        q=q_clean, brands=brand, conditions=condition,
+        themes=theme, statuses=status,
+    )
+    total = count_all_sets()
+
     return templates.TemplateResponse(request, "index.html", context=_ctx(
-        request, sets=sets, sort=sort, dir=dir,
+        request, sets=sets, facets=facets, total=total,
+        active_filters={"brand": brand, "condition": condition,
+                        "theme": theme, "status": status},
+        q=q_clean or "", sort=sort, dir=dir,
         sort_options=["date_of_purchase", "name", "brand", "part_count", "price_paid"],
     ))
 
