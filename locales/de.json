@@ -59,7 +59,20 @@
     "sort_parts":  "Teileanzahl",
     "sort_price":  "Preis",
     "draft_badge": "Entwurf",
-    "empty":       "Noch keine Sets. Füge dein erstes Set hinzu!"
+    "empty":       "Noch keine Sets. Füge dein erstes Set hinzu!",
+    "search_placeholder": "Alle Felder durchsuchen...",
+    "search_clear":       "Suche löschen",
+    "filters":            "Filter",
+    "filters_active":     "{count} aktiv",
+    "filter_clear_all":   "Alle Filter zurücksetzen",
+    "facet_brand":        "Marke",
+    "facet_condition":    "Zustand",
+    "facet_theme":        "Thema",
+    "facet_status":       "Status",
+    "status_complete":    "Vollständig",
+    "status_draft":       "Entwurf",
+    "results_count":      "{shown} von {total} Sets",
+    "no_matches":         "Keine Sets entsprechen diesen Filtern"
   },
   "quota": {
     "remaining": "Merlinssteine: {remaining}/{limit} heute"

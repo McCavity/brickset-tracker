@@ -59,7 +59,20 @@
     "sort_parts":  "Part Count",
     "sort_price":  "Price",
     "draft_badge": "Draft",
-    "empty":       "No sets yet. Add your first set!"
+    "empty":       "No sets yet. Add your first set!",
+    "search_placeholder": "Search across all fields...",
+    "search_clear":       "Clear search",
+    "filters":            "Filters",
+    "filters_active":     "{count} active",
+    "filter_clear_all":   "Clear all filters",
+    "facet_brand":        "Brand",
+    "facet_condition":    "Condition",
+    "facet_theme":        "Theme",
+    "facet_status":       "Status",
+    "status_complete":    "Complete",
+    "status_draft":       "Draft",
+    "results_count":      "{shown} of {total} sets",
+    "no_matches":         "No sets match these filters"
   },
   "quota": {
     "remaining": "Merlinssteine: {remaining}/{limit} today"
