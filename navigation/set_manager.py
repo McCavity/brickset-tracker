@@ -122,6 +122,47 @@ def count_all_sets() -> int:
     return row["n"]
 
 
+def get_facet_counts(
+    q: str | None = None,
+    brands: list[str] | None = None,
+    conditions: list[str] | None = None,
+    themes: list[str] | None = None,
+    statuses: list[str] | None = None,
+) -> dict[str, dict[str, int]]:
+    """Return {"brand": {"LEGO": 12, ...}, "condition": {...}, ...}.
+
+    Each facet's counts are computed ignoring that facet's own filter
+    but honouring all other filters and the search query. This lets the
+    UI show selectable alternatives even within an active facet.
+    NULL values are excluded — "no theme" isn't a useful facet option.
+    """
+    facet_definitions = [
+        ("brand",     {"brands": None,     "conditions": conditions, "themes": themes, "statuses": statuses}),
+        ("condition", {"brands": brands,   "conditions": None,       "themes": themes, "statuses": statuses}),
+        ("theme",     {"brands": brands,   "conditions": conditions, "themes": None,   "statuses": statuses}),
+        ("status",    {"brands": brands,   "conditions": conditions, "themes": themes, "statuses": None}),
+    ]
+
+    results: dict[str, dict[str, int]] = {}
+
+    with get_connection() as conn:
+        for column, filter_overrides in facet_definitions:
+            where_clauses, params = _build_filter_clauses(q=q, **filter_overrides)
+            where_sql = ("WHERE " + " AND ".join(where_clauses) + f" AND {column} IS NOT NULL"
+                         if where_clauses
+                         else f"WHERE {column} IS NOT NULL")
+            rows = conn.execute(
+                f"""SELECT {column} AS value, COUNT(*) AS n
+                    FROM sets
+                    {where_sql}
+                    GROUP BY {column}""",
+                params,
+            ).fetchall()
+            results[column] = {r["value"]: r["n"] for r in rows}
+
+    return results
+
+
 def _build_filter_clauses(
     *,
     q: str | None = None,
