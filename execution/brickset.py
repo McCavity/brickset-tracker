@@ -102,6 +102,59 @@ async def sync_owned(set_id: int, qty_owned: int) -> dict:
     return result
 
 
+PAGE_SIZE = 100
+
+
+async def fetch_owned_collection() -> dict:
+    """Return all LEGO sets the user owns on Brickset.
+
+    Pages through getSets with owned=1 until fewer than PAGE_SIZE results
+    return. Each page consumes one quota point. The "next page is empty"
+    case (when the total is an exact multiple of PAGE_SIZE) costs one
+    extra quota point — acceptable for V1.
+
+    Returns:
+        {"status": "ok", "sets": [...]}        on success
+        {"status": "quota_exceeded"}           if quota is exhausted before any call
+        {"status": "error", "message": "..."}  on network/API failure
+    """
+    all_sets: list[dict] = []
+    page = 1
+
+    while True:
+        if not check_quota("brickset"):
+            return {"status": "quota_exceeded"}
+
+        params = json.dumps({
+            "owned":      1,
+            "pageSize":   PAGE_SIZE,
+            "pageNumber": page,
+        })
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                r = await client.post(f"{BASE}/getSets", data={
+                    "apiKey": API_KEY, "userHash": USER_HASH, "params": params,
+                })
+        except httpx.RequestError as e:
+            log.warning("Brickset network error: %s", e)
+            return {"status": "error", "message": str(e)}
+
+        increment_quota("brickset")
+
+        body = r.json()
+        if body.get("status") != "success":
+            return {"status": "error", "message": body.get("message")}
+
+        page_sets = body.get("sets", [])
+        all_sets.extend(_map_owned_set(s) for s in page_sets)
+
+        if len(page_sets) < PAGE_SIZE:
+            break
+        page += 1
+
+    return {"status": "ok", "sets": all_sets}
+
+
 def _map_set(s: dict) -> dict:
     barcode = s.get("barcode") or {}
     img     = s.get("image") or {}
