@@ -295,6 +295,60 @@ def find_local_rows_missing_brickset_id(brand: str, set_number: str) -> list[int
     return [r["id"] for r in rows]
 
 
+def commit_import_rows(rows: list[dict]) -> dict:
+    """Persist a batch of Brickset import rows.
+
+    Each row dict has:
+      brand, set_number, name, part_count, theme, release_year, ean,
+      web_images (list of str), brickset_set_id (int),
+      import_qty (int >= 0), local_ids_missing_bs_id (list[int]).
+
+    For each row:
+      - UPDATEs brickset_set_id on every id in local_ids_missing_bs_id.
+      - INSERTs import_qty new rows with status='complete' and a note marking
+        them as Brickset imports.
+
+    Returns {"created": N, "backfilled": K} — total rows created/updated.
+    """
+    today = date.today().isoformat()
+    note = f"Imported from Brickset on {today}"
+    created = 0
+    backfilled = 0
+
+    with get_connection() as conn:
+        for row in rows:
+            # Backfill existing rows
+            existing_ids = row.get("local_ids_missing_bs_id") or []
+            if existing_ids:
+                placeholders = ",".join("?" * len(existing_ids))
+                cur = conn.execute(
+                    f"""UPDATE sets SET brickset_set_id = ?, updated_at = datetime('now')
+                        WHERE id IN ({placeholders})""",
+                    (row["brickset_set_id"], *existing_ids),
+                )
+                backfilled += cur.rowcount
+
+            # Insert new rows
+            qty = int(row.get("import_qty") or 0)
+            for _ in range(qty):
+                conn.execute(
+                    """INSERT INTO sets
+                       (brand, set_number, name, part_count, theme, release_year,
+                        ean, web_images, brickset_set_id, status, note)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'complete', ?)""",
+                    (
+                        row["brand"], row["set_number"], row["name"],
+                        row.get("part_count"), row.get("theme"),
+                        row.get("release_year"), row.get("ean"),
+                        json.dumps(row.get("web_images") or []),
+                        row["brickset_set_id"], note,
+                    ),
+                )
+                created += 1
+
+    return {"created": created, "backfilled": backfilled}
+
+
 def _find_duplicates(brand: str, set_number: str) -> list[dict]:
     if not brand or not set_number:
         return []
