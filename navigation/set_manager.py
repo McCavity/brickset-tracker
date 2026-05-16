@@ -281,6 +281,20 @@ def count_owned(brand: str, set_number: str) -> int:
     return row["n"] if row else 0
 
 
+def find_local_rows_missing_brickset_id(brand: str, set_number: str) -> list[int]:
+    """Return ids of local rows matching brand+set_number that lack a brickset_set_id.
+
+    Used by the Brickset import to backfill the id on existing rows that were
+    entered before Brickset had the set indexed.
+    """
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT id FROM sets WHERE brand=? AND set_number=? AND brickset_set_id IS NULL",
+            (brand, set_number),
+        ).fetchall()
+    return [r["id"] for r in rows]
+
+
 def _find_duplicates(brand: str, set_number: str) -> list[dict]:
     if not brand or not set_number:
         return []
