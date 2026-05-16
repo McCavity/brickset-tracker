@@ -115,7 +115,9 @@ def test_commit_validates_required_fields(db):
             {"brand": "LEGO", "set_number": "", "import_qty": 1,
              "brickset_set_id": 1, "name": "X", "local_ids_missing_bs_id": []},
             {"brand": "LEGO", "set_number": "10298", "import_qty": 1,
-             "brickset_set_id": 23456, "name": "Vespa", "local_ids_missing_bs_id": [],
+             "brickset_set_id": 23456, "name": "Vespa",
+             "part_count": 1106,
+             "local_ids_missing_bs_id": [],
              "web_images": []},
         ],
     }
@@ -127,6 +129,46 @@ def test_commit_validates_required_fields(db):
         count = conn.execute("SELECT COUNT(*) AS n FROM sets").fetchone()["n"]
     # Only the valid row was committed
     assert count == 1
+
+
+def test_commit_skips_rows_without_part_count(db):
+    """A row without a valid integer part_count is silently skipped.
+
+    part_count is a required field on the local schema; defaulting to 0
+    would pollute the collection with fake zero-piece sets."""
+    client = TestClient(app)
+    payload = {
+        "rows": [
+            # Missing part_count
+            {"brand": "LEGO", "set_number": "10298",
+             "brickset_set_id": 23456, "name": "X",
+             "import_qty": 1, "local_ids_missing_bs_id": [],
+             "web_images": []},
+            # part_count is a non-integer string
+            {"brand": "LEGO", "set_number": "10299",
+             "brickset_set_id": 23457, "name": "Y",
+             "part_count": "not-a-number",
+             "import_qty": 1, "local_ids_missing_bs_id": [],
+             "web_images": []},
+            # Valid — should commit
+            {"brand": "LEGO", "set_number": "10300",
+             "brickset_set_id": 23458, "name": "Z",
+             "part_count": 500,
+             "import_qty": 1, "local_ids_missing_bs_id": [],
+             "web_images": []},
+        ],
+    }
+    r = client.post("/api/import/brickset/commit", json=payload, follow_redirects=False)
+    assert r.status_code in (302, 303)
+    assert "imported=1" in r.headers.get("location", "")
+
+    from execution.db import get_connection
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT set_number FROM sets ORDER BY set_number"
+        ).fetchall()
+    nums = [r["set_number"] for r in rows]
+    assert nums == ["10300"]
 
 
 def test_commit_validates_import_qty_is_non_negative(db):

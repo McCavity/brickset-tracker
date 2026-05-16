@@ -229,17 +229,21 @@ async def api_import_commit(request: Request):
         if not row.get("brickset_set_id"):
             continue
 
+        # Schema requires part_count NOT NULL; skip rows without a valid
+        # non-negative int (defaulting to 0 would pollute the data with
+        # phantom "0-piece sets").
+        try:
+            part_count = int(row["part_count"])
+        except (TypeError, ValueError, KeyError):
+            continue
+        if part_count < 0:
+            continue
+
         # Clamp import_qty to non-negative int
         try:
             qty = max(0, int(row.get("import_qty") or 0))
         except (TypeError, ValueError):
             qty = 0
-
-        # Schema requires part_count NOT NULL; default missing/invalid to 0
-        try:
-            part_count = int(row["part_count"]) if row.get("part_count") is not None else 0
-        except (TypeError, ValueError):
-            part_count = 0
 
         sanitised.append({
             "brand":                   str(row["brand"]),
