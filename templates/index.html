@@ -4,6 +4,13 @@
 
 {% block content %}
 
+{% if flash_imported is not none and flash_backfilled is not none %}
+<div class="callout callout-ok flash-banner">
+  <span class="callout__mark">✓</span>
+  <p>{{ t('import.flash_success', created=flash_imported, backfilled=flash_backfilled) }}</p>
+</div>
+{% endif %}
+
 {# ── Page header ──────────────────────────────────────────────────── #}
 <div class="page-header">
   <div style="display:flex;align-items:center;gap:16px">

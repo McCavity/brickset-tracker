@@ -61,6 +61,8 @@ async def index(
     condition: list[str] = Query(default_factory=list),
     theme: list[str] = Query(default_factory=list),
     status: list[str] = Query(default_factory=list),
+    imported: int | None = None,
+    backfilled: int | None = None,
 ):
     # Sanitise search
     q_clean = (q or "").strip()[:200] or None
@@ -82,6 +84,8 @@ async def index(
                         "theme": theme, "status": status},
         q=q_clean or "", sort=sort, dir=dir,
         sort_options=["date_of_purchase", "name", "brand", "part_count", "price_paid"],
+        flash_imported=imported,
+        flash_backfilled=backfilled,
     ))
 
 
