@@ -762,3 +762,109 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
   margin-bottom: var(--sp-3);
 }
 .results-count i { color: var(--fg-muted); }
+
+/* ---------- Brickset Import ---------------------------------------- */
+.import-summary {
+  font: 400 13px/1.5 var(--font-body);
+  color: var(--fg-muted);
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+}
+
+.import-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+.import-preview-row {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-2) var(--sp-4);
+  align-items: center;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.import-preview-row__pick {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  cursor: pointer;
+  min-width: 0;
+}
+.import-preview-row__pick input[type="checkbox"] {
+  margin-top: 6px;
+  accent-color: var(--kuestenblau);
+  cursor: pointer;
+}
+.import-preview-row__kicker {
+  font: 500 10px/1 var(--font-body);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: var(--sp-1);
+}
+.import-preview-row__name {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.25;
+  color: var(--fg-heading);
+  margin-bottom: var(--sp-1);
+}
+.import-preview-row__meta {
+  display: flex;
+  gap: var(--sp-3);
+  font: 400 12px/1 var(--font-mono);
+  color: var(--fg-muted);
+}
+.import-preview-row__meta span { white-space: nowrap; }
+
+.import-preview-row__qty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--sp-1);
+  font: 400 12px/1.4 var(--font-mono);
+  color: var(--fg-muted);
+}
+.import-preview-row__qty strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+.import-preview-row__qty label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+.import-preview-row__qty input[type="number"] {
+  width: 70px;
+  font: 400 14px/1 var(--font-mono);
+  padding: 4px 8px;
+  border: 1px solid rgba(27,58,92,.28);
+  border-radius: var(--r-md);
+  background: var(--weiss);
+  text-align: right;
+}
+
+.import-preview-row__hint {
+  grid-column: 1 / -1;
+  font: 400 11px/1.4 var(--font-body);
+  font-style: italic;
+  color: var(--fg-muted);
+  padding-left: var(--sp-5);
+}
+
+.flash-banner {
+  margin-bottom: var(--sp-4);
+}
