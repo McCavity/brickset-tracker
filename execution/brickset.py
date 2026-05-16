@@ -22,19 +22,57 @@ BASE      = "https://brickset.com/api/v3.asmx"
 
 
 async def fetch_set(set_number: str) -> dict:
-    """Fetch LEGO set metadata from Brickset by set number."""
-    if not check_quota("brickset"):
-        return {"status": "quota_exceeded"}
+    """Fetch LEGO set metadata from Brickset by set number.
 
+    Brickset's getSets API matches setNumber exactly, and its canonical form
+    includes a variant suffix (e.g. ``42225-1``). To accept the bare set
+    number users normally type, we try a list of candidates in order and
+    return the first hit.
+    """
+    candidates = (
+        [set_number] if "-" in set_number
+        else [f"{set_number}-1", set_number]
+    )
+
+    for candidate in candidates:
+        if not check_quota("brickset"):
+            return {"status": "quota_exceeded"}
+
+        result = await _query(candidate)
+        if result["status"] != "ok":
+            # Network error or upstream non-success — give up early.
+            return {"status": "error", "message": result.get("message")}
+
+        sets = result["sets"]
+        if not sets:
+            continue  # Try next candidate
+
+        if len(sets) > 1:
+            return {
+                "status":     "ambiguous",
+                "candidates": [_map_set(s) for s in sets],
+            }
+
+        return {"status": "found", **_map_set(sets[0])}
+
+    return {"status": "not_found"}
+
+
+async def _query(set_number: str) -> dict:
+    """One Brickset getSets call. Consumes one quota point on every call.
+
+    Returns {"status": "ok", "sets": [...]} on success or
+    {"status": "error", "message": ...} on network/API failure.
+    """
     params = json.dumps({"setNumber": set_number})
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             r = await client.post(f"{BASE}/getSets", data={
-                "apiKey": API_KEY, "userHash": USER_HASH, "params": params
+                "apiKey": API_KEY, "userHash": USER_HASH, "params": params,
             })
     except httpx.RequestError as e:
         log.warning("Brickset network error: %s", e)
-        return {"status": "error"}
+        return {"status": "error", "message": str(e)}
 
     increment_quota("brickset")
 
@@ -42,23 +80,7 @@ async def fetch_set(set_number: str) -> dict:
     if body.get("status") != "success":
         return {"status": "error", "message": body.get("message")}
 
-    sets = body.get("sets", [])
-
-    # Try without variant suffix if nothing found
-    if not sets and "-" in set_number:
-        base_num = set_number.split("-")[0]
-        return await fetch_set(base_num)
-
-    if not sets:
-        return {"status": "not_found"}
-
-    if len(sets) > 1:
-        return {
-            "status":     "ambiguous",
-            "candidates": [_map_set(s) for s in sets],
-        }
-
-    return {"status": "found", **_map_set(sets[0])}
+    return {"status": "ok", "sets": body.get("sets", [])}
 
 
 async def sync_owned(set_id: int, qty_owned: int) -> dict:
