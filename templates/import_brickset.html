@@ -17,9 +17,99 @@
   </p>
   <button type="button" id="fetch-button" class="btn btn-primary">
     <i data-lucide="download" style="width:15px;height:15px"></i>
-    {{ t('import.fetch_button') }}
+    <span id="fetch-button-label">{{ t('import.fetch_button') }}</span>
   </button>
 </div>
 
 <div id="import-preview" class="hidden"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const FETCH_BUTTON       = document.getElementById('fetch-button');
+const FETCH_BUTTON_LABEL = document.getElementById('fetch-button-label');
+const FETCH_LABEL_FETCH  = {{ t('import.fetch_button') | tojson }};
+const FETCH_LABEL_BUSY   = {{ t('import.fetching') | tojson }};
+const SUBMIT_LABEL_TPL   = {{ t('import.submit_button', n='__N__') | tojson }};
+
+// ── Fetch the Brickset collection ────────────────────────────────────────
+FETCH_BUTTON.addEventListener('click', async () => {
+  FETCH_BUTTON.disabled = true;
+  FETCH_BUTTON_LABEL.textContent = FETCH_LABEL_BUSY;
+  try {
+    const r = await fetch('/api/import/brickset/fetch', { method: 'POST' });
+    if (!r.ok) throw new Error(`Server error ${r.status}`);
+    const html = await r.text();
+
+    document.getElementById('import-initial').classList.add('hidden');
+    const host = document.getElementById('import-preview');
+    host.innerHTML = html;
+    host.classList.remove('hidden');
+    lucide.createIcons();
+    wirePreview();
+  } catch (err) {
+    FETCH_BUTTON.disabled = false;
+    FETCH_BUTTON_LABEL.textContent = FETCH_LABEL_FETCH;
+    alert('Fetch failed: ' + err.message);
+  }
+});
+
+// ── Wire up the preview interactions ─────────────────────────────────────
+function wirePreview() {
+  const list   = document.querySelector('.import-preview-list');
+  if (!list) return;
+
+  function recompute() {
+    let totalRows = 0;
+    list.querySelectorAll('.import-preview-row').forEach(row => {
+      const ticked = row.querySelector('.import-row-check').checked;
+      const qty    = parseInt(row.querySelector('.import-qty-input').value, 10) || 0;
+      if (ticked) totalRows += qty;
+      row.style.opacity = ticked ? '' : '.45';
+    });
+    const label = document.getElementById('import-submit-label');
+    if (label) label.textContent = SUBMIT_LABEL_TPL.replace('__N__', totalRows);
+  }
+
+  list.addEventListener('change', recompute);
+  list.addEventListener('input',  recompute);
+  recompute();
+}
+
+// ── Submit the import ────────────────────────────────────────────────────
+async function submitImport(event) {
+  event.preventDefault();
+  const submit = document.getElementById('import-submit');
+  submit.disabled = true;
+
+  const rows = [];
+  document.querySelectorAll('.import-preview-row').forEach(row => {
+    const ticked = row.querySelector('.import-row-check').checked;
+    if (!ticked) return;
+    const qty = parseInt(row.querySelector('.import-qty-input').value, 10) || 0;
+    const payload = JSON.parse(row.querySelector('.import-row-payload').textContent);
+    payload.import_qty = qty;
+    rows.push(payload);
+  });
+
+  try {
+    const r = await fetch('/api/import/brickset/commit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows }),
+    });
+    if (r.redirected) {
+      window.location.href = r.url;
+    } else if (r.ok) {
+      window.location.href = '/';
+    } else {
+      throw new Error(`Server error ${r.status}`);
+    }
+  } catch (err) {
+    submit.disabled = false;
+    alert('Import failed: ' + err.message);
+  }
+  return false;
+}
+</script>
 {% endblock %}
