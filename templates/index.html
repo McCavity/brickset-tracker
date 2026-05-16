@@ -20,10 +20,18 @@
       {{ t('quota.remaining', remaining=ms.remaining, limit=ms.limit) }}
     </span>
   </div>
-  <a href="/add" class="btn btn-primary">
-    <i data-lucide="plus" style="width:15px;height:15px"></i>
-    {{ t('add.title') }}
-  </a>
+  <div style="display:flex;align-items:center;gap:var(--sp-3)">
+    {% if quota.brickset.remaining > 0 %}
+    <a href="/import/brickset" class="btn btn-ghost">
+      <i data-lucide="download" style="width:15px;height:15px"></i>
+      {{ t('nav.import_brickset') }}
+    </a>
+    {% endif %}
+    <a href="/add" class="btn btn-primary">
+      <i data-lucide="plus" style="width:15px;height:15px"></i>
+      {{ t('add.title') }}
+    </a>
+  </div>
 </div>
 
 {# ── Search row ───────────────────────────────────────────────────── #}
