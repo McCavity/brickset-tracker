@@ -2,6 +2,7 @@
 Brickset Tracker — FastAPI application.
 Start: uvicorn main:app --reload --port 8000
 """
+import re
 from contextlib import asynccontextmanager
 from datetime import date
 from urllib.parse import quote
@@ -21,6 +22,10 @@ from navigation.set_manager import (
     get_facet_counts, get_set, get_sets, save_set, update_set
 )
 from execution.brickset import sync_owned
+
+
+# Module-level validation
+SESSION_ID_RE = re.compile(r"[a-fA-F0-9-]{8,64}")
 
 
 @asynccontextmanager
@@ -420,6 +425,11 @@ async def api_delete_set(set_id: int):
 
 @app.post("/api/upload")
 async def api_upload(file: UploadFile = File(...), session_id: str = Form(...)):
+    if not SESSION_ID_RE.fullmatch(session_id):
+        return JSONResponse(
+            {"ok": False, "error": "invalid session_id"},
+            status_code=400,
+        )
     content = await file.read()
     result  = upload_to_staging(content, file.filename or "photo", session_id)
     return JSONResponse(result)
