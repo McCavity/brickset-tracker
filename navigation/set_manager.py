@@ -38,8 +38,8 @@ def save_set(data: dict, session_id: str | None = None) -> dict:
             """INSERT INTO sets
                (ean, brand, set_number, name, part_count, condition, location,
                 date_of_purchase, note, theme, release_year, web_images, own_photos,
-                minifigs, price_paid, brickset_set_id, status)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                minifigs, price_paid, list_price, brickset_set_id, status)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 data.get("ean"),
                 data.get("brand", ""),
@@ -56,6 +56,7 @@ def save_set(data: dict, session_id: str | None = None) -> dict:
                 json.dumps(data.get("own_photos") or []),
                 _int(data.get("minifigs")),
                 _float(data.get("price_paid")),
+                _float(data.get("list_price")),
                 _int(data.get("brickset_set_id")),
                 status,
             ),
@@ -104,7 +105,7 @@ def get_sets(
         rows = conn.execute(
             f"""SELECT id, ean, brand, set_number, name, part_count, condition,
                        location, date_of_purchase, note, theme, release_year,
-                       web_images, own_photos, minifigs, price_paid,
+                       web_images, own_photos, minifigs, price_paid, list_price,
                        brickset_set_id, status, created_at
                 FROM sets
                 {where_sql}
@@ -224,7 +225,7 @@ def update_set(set_id: int, data: dict, session_id: str | None = None) -> dict:
             """UPDATE sets SET
                ean=?, brand=?, set_number=?, name=?, part_count=?, condition=?,
                location=?, date_of_purchase=?, note=?, theme=?, release_year=?,
-               web_images=?, own_photos=?, minifigs=?, price_paid=?,
+               web_images=?, own_photos=?, minifigs=?, price_paid=?, list_price=?,
                brickset_set_id=?, status=?, updated_at=datetime('now')
                WHERE id=?""",
             (
@@ -243,6 +244,7 @@ def update_set(set_id: int, data: dict, session_id: str | None = None) -> dict:
                 json.dumps(kept_photos),
                 _int(data.get("minifigs")),
                 _float(data.get("price_paid")),
+                _float(data.get("list_price")),
                 _int(data.get("brickset_set_id")),
                 status,
                 set_id,
