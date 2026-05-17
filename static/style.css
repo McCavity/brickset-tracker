@@ -1088,3 +1088,110 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
 }
 .lightbox-nav--prev { left: var(--sp-5); }
 .lightbox-nav--next { right: var(--sp-5); }
+
+/* ---------- Settings (general) ------------------------------------- */
+.settings-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: rgba(245, 240, 232, 0.75);
+  background: rgba(245, 240, 232, 0.12);
+  border: 1px solid rgba(245, 240, 232, 0.25);
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  margin-right: var(--sp-2);
+}
+.settings-link:hover {
+  background: rgba(245, 240, 232, 0.22);
+  color: var(--kartenpapier);
+}
+
+.settings-intro {
+  font: 400 13px/1.5 var(--font-body);
+  color: var(--fg-muted);
+  margin-bottom: var(--sp-4);
+  max-width: 720px;
+}
+
+.settings-section {
+  margin-bottom: var(--sp-5);
+}
+.settings-section__heading {
+  font: 500 12px/1 var(--font-body);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* ---------- Brand-Slug Settings ------------------------------------ */
+.brand-slug-add-form {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.brand-slug-add-form .field { min-width: 200px; }
+.brand-slug-add-form .field label {
+  font: 500 10px/1 var(--font-body);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: var(--sp-1);
+  display: block;
+}
+.brand-slug-add-form .field input {
+  width: 100%;
+  font: 400 14px/1 var(--font-body);
+  padding: 8px 12px;
+  border: 1px solid rgba(27, 58, 92, 0.28);
+  border-radius: var(--r-md);
+  background: var(--weiss);
+}
+
+.brand-slug-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.brand-slug-table thead th {
+  font: 500 10px/1 var(--font-body);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  text-align: left;
+  padding: var(--sp-3) var(--sp-3);
+  border-bottom: 1px solid var(--rule);
+}
+.brand-slug-table tbody td {
+  padding: var(--sp-3) var(--sp-3);
+  border-bottom: 1px solid var(--rule);
+  vertical-align: middle;
+}
+.brand-slug-table__brand {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--fg);
+}
+.brand-slug-table__slug {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.brand-slug-table__slug-input {
+  font: 400 13px/1 var(--font-mono);
+  padding: 6px 10px;
+  border: 1px solid rgba(27, 58, 92, 0.28);
+  border-radius: var(--r-md);
+  background: var(--weiss);
+  width: 200px;
+}
+.brand-slug-table__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+.brand-slug-table__actions .btn { padding: 6px 10px; }
