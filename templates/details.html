@@ -188,4 +188,58 @@
 
 </div>{# /details-grid #}
 
+{# ── Lightbox overlay (hidden by default) ─────────────────────────── #}
+<div class="lightbox hidden" id="lightbox">
+  <img id="lightbox-img" alt="">
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Lightbox ──────────────────────────────────────────────────────────────
+(function () {
+  const overlay = document.getElementById('lightbox');
+  const overlayImg = document.getElementById('lightbox-img');
+  if (!overlay || !overlayImg) return;
+
+  // Active list of img elements the user can cycle through with arrow keys.
+  // Set when the lightbox opens; cleared when it closes.
+  let activeImages = [];
+  let activeIndex = -1;
+
+  window.openLightbox = function (imgEl) {
+    if (!imgEl) return;
+    // Find the group: all images in the same .details-photo-thumbs group,
+    // or all images in .details-photos if the main image was clicked.
+    const group = imgEl.closest('.details-photo-thumbs')
+      || imgEl.closest('.details-photo-main');
+    activeImages = group ? Array.from(group.querySelectorAll('img')) : [imgEl];
+    activeIndex = Math.max(0, activeImages.indexOf(imgEl));
+    overlayImg.src = imgEl.src;
+    overlay.classList.remove('hidden');
+  };
+
+  function closeLightbox() {
+    overlay.classList.add('hidden');
+    overlayImg.src = '';
+    activeImages = [];
+    activeIndex = -1;
+  }
+
+  function step(delta) {
+    if (activeImages.length < 2) return;
+    activeIndex = (activeIndex + delta + activeImages.length) % activeImages.length;
+    overlayImg.src = activeImages[activeIndex].src;
+  }
+
+  overlay.addEventListener('click', closeLightbox);
+  document.addEventListener('keydown', (e) => {
+    if (overlay.classList.contains('hidden')) return;
+    if (e.key === 'Escape') closeLightbox();
+    else if (e.key === 'ArrowLeft')  step(-1);
+    else if (e.key === 'ArrowRight') step(1);
+  });
+})();
+</script>
 {% endblock %}
