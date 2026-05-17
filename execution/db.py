@@ -38,6 +38,7 @@ def init_db() -> None:
                 own_photos       TEXT,
                 minifigs         INTEGER,
                 price_paid       REAL,
+                list_price       REAL,
                 brickset_set_id  INTEGER,
                 status           TEXT    NOT NULL DEFAULT 'draft',
                 created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
@@ -63,3 +64,11 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_sets_date   ON sets(date_of_purchase);
             CREATE INDEX IF NOT EXISTS idx_sets_status ON sets(status);
         """)
+
+        # Idempotent migration for databases created before list_price existed.
+        # SQLite raises OperationalError if the column is already present;
+        # CREATE TABLE IF NOT EXISTS above won't add columns to an existing table.
+        try:
+            conn.execute("ALTER TABLE sets ADD COLUMN list_price REAL")
+        except sqlite3.OperationalError:
+            pass
