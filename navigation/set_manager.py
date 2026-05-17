@@ -3,6 +3,7 @@ Orchestrates add, edit, and delete operations on set records.
 See architecture/SOP-001-add-set-workflow.md and SOP-008-database.md.
 """
 import json
+import shutil
 from datetime import date
 
 from execution.db import get_connection
@@ -201,9 +202,14 @@ def _build_filter_clauses(
 
 
 def delete_set(set_id: int) -> None:
-    """Delete a set record. Caller must have confirmed with user first."""
+    """Delete a set record and its uploads/{id}/ photo folder.
+    Caller must have confirmed with user first.
+    """
+    # NOTE: lazy import so tests can monkeypatch execution.photos.UPLOADS_ROOT.
+    from execution.photos import UPLOADS_ROOT
     with get_connection() as conn:
         conn.execute("DELETE FROM sets WHERE id=?", (set_id,))
+    shutil.rmtree(UPLOADS_ROOT / str(set_id), ignore_errors=True)
 
 
 def get_set(set_id: int) -> dict | None:
