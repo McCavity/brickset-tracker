@@ -97,6 +97,22 @@
     "link_brickset":        "Brickset page",
     "link_merlinssteine":   "merlinssteine.de page"
   },
+  "settings": {
+    "brand_slugs": {
+      "title":           "Brand Slugs",
+      "intro":           "Maps brand names to merlinssteine.de URL slugs. Brands not in this list use the brand name itself (lowercased, spaces replaced with hyphens).",
+      "add_heading":     "Add new",
+      "col_brand":       "Brand",
+      "col_slug":        "Slug",
+      "add_button":      "Add",
+      "empty":           "No brand slugs configured yet. Add the first one above.",
+      "error_duplicate": "Brand \"{brand}\" already has a slug. Edit the existing row instead.",
+      "error_empty":     "Brand and slug must both be non-empty.",
+      "delete_confirm":  "Really delete the slug mapping for \"{brand}\"?",
+      "save":            "Save",
+      "cancel":          "Cancel"
+    }
+  },
   "import": {
     "title":                 "Import from Brickset",
     "intro":                 "This will pull every set you've marked as owned on Brickset and let you preview before importing.",

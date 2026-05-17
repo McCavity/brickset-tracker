@@ -97,6 +97,22 @@
     "link_brickset":        "Brickset-Seite",
     "link_merlinssteine":   "merlinssteine.de-Seite"
   },
+  "settings": {
+    "brand_slugs": {
+      "title":           "Marken-Slugs",
+      "intro":           "Ordnet Markennamen den merlinssteine.de-URL-Slugs zu. Marken, die hier nicht aufgeführt sind, verwenden den Markennamen direkt (kleingeschrieben, Leerzeichen werden zu Bindestrichen).",
+      "add_heading":     "Neu hinzufügen",
+      "col_brand":       "Marke",
+      "col_slug":        "Slug",
+      "add_button":      "Hinzufügen",
+      "empty":           "Noch keine Marken-Slugs konfiguriert. Füge oben den ersten hinzu.",
+      "error_duplicate": "Marke \"{brand}\" hat bereits einen Slug. Bearbeite stattdessen den vorhandenen Eintrag.",
+      "error_empty":     "Marke und Slug dürfen nicht leer sein.",
+      "delete_confirm":  "Slug-Zuordnung für \"{brand}\" wirklich löschen?",
+      "save":            "Speichern",
+      "cancel":          "Abbrechen"
+    }
+  },
   "import": {
     "title":                 "Aus Brickset importieren",
     "intro":                 "Hierbei werden alle Sets, die du auf Brickset als eigen markiert hast, abgerufen und zur Vorschau angezeigt.",
