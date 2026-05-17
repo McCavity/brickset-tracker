@@ -83,3 +83,37 @@ def test_upload_rejects_disallowed_characters(db):
 
     assert r.status_code == 400
     assert r.json()["ok"] is False
+
+
+def test_upload_accepts_uuid_shaped_session_id(db, tmp_path, monkeypatch):
+    """A standard 36-char UUID session_id (matches crypto.randomUUID())
+    must continue to succeed. Guards against future regex tightening that
+    would silently break the frontend."""
+    import os
+    from main import app
+
+    # Let lifespan run first (it loads locales from real cwd), then chdir
+    # to tmp_path so upload_to_staging's relative STAGING_ROOT (and its
+    # downstream relative_to(Path(".")) call) both resolve under the
+    # isolated temp tree. Restore the original cwd before exiting so other
+    # tests aren't affected.
+    with TestClient(app) as client:
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+            r = client.post(
+                "/api/upload",
+                files={"file": ("x.jpg", b"\xff\xd8\xff\xd9", "image/jpeg")},
+                data={"session_id": "550e8400-e29b-41d4-a716-446655440000"},
+            )
+            ok = r.json()
+            written_path = tmp_path / ok["path"] if ok.get("ok") else None
+        finally:
+            os.chdir(original_cwd)
+
+    assert r.status_code == 200
+    assert ok["ok"] is True
+    # The returned path starts with "uploads/staging/{session_id}/"
+    assert ok["path"].startswith("uploads/staging/550e8400-e29b-41d4-a716-446655440000/")
+    # And the file actually landed under tmp_path (not the real project tree).
+    assert written_path is not None and written_path.exists()

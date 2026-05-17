@@ -3,8 +3,11 @@ Orchestrates add, edit, and delete operations on set records.
 See architecture/SOP-001-add-set-workflow.md and SOP-008-database.md.
 """
 import json
+import logging
 import shutil
 from datetime import date
+
+log = logging.getLogger(__name__)
 
 from execution.db import get_connection
 from execution.photos import finalise_photos
@@ -221,34 +224,20 @@ def get_set(set_id: int) -> dict | None:
 
 def update_set(set_id: int, data: dict, session_id: str | None = None) -> dict:
     """Update an existing set record. Keeps existing own_photos unless removed.
-    Removed photos are unlinked from disk (S2)."""
+    Removed photos are unlinked from disk after the DB UPDATE succeeds (S2)."""
     missing = [f for f in REQUIRED if not data.get(f)]
     status = "draft" if missing else "complete"
 
     kept_photos = json.loads(data.get("existing_own_photos") or "[]")
 
-    # S2 — unlink photos the user removed from the edit form.
-    # NOTE: lazy import so tests can monkeypatch execution.photos.UPLOADS_ROOT.
-    from execution.photos import UPLOADS_ROOT
+    # Compute which photos the user removed BEFORE issuing the UPDATE,
+    # so we have a stable diff against the DB's pre-update state.
     with get_connection() as conn:
         old_row = conn.execute(
             "SELECT own_photos FROM sets WHERE id=?", (set_id,)
         ).fetchone()
     old_photos = json.loads(old_row["own_photos"] or "[]") if old_row else []
     removed = set(old_photos) - set(kept_photos)
-    for rel in removed:
-        try:
-            # Paths in own_photos are relative to project root (e.g. "uploads/12/foo.jpg").
-            # Strip the leading "uploads/" so we can resolve against UPLOADS_ROOT
-            # (which itself ends in /uploads) without doubling the segment.
-            stripped = rel[len("uploads/"):] if rel.startswith("uploads/") else rel
-            (UPLOADS_ROOT / stripped).unlink(missing_ok=True)
-        except OSError as exc:
-            # Don't block the user's edit on a filesystem oddity (perms, race, etc.).
-            import logging
-            logging.getLogger(__name__).warning(
-                "Could not unlink %s during edit cleanup: %s", rel, exc
-            )
 
     with get_connection() as conn:
         conn.execute(
@@ -280,6 +269,23 @@ def update_set(set_id: int, data: dict, session_id: str | None = None) -> dict:
                 set_id,
             ),
         )
+
+    # S2 — unlink the removed photos AFTER the DB UPDATE succeeds, so a
+    # failed UPDATE leaves files in place (orphaned) rather than gone with
+    # stale DB references. This matches S1's "DB first, filesystem second"
+    # ordering for the delete path.
+    # NOTE: lazy import so tests can monkeypatch execution.photos.UPLOADS_ROOT.
+    from execution.photos import UPLOADS_ROOT
+    for rel in removed:
+        try:
+            # Paths in own_photos are relative to project root (e.g. "uploads/12/foo.jpg").
+            # Strip the leading "uploads/" so we can resolve against UPLOADS_ROOT
+            # (which itself ends in /uploads) without doubling the segment.
+            stripped = rel[len("uploads/"):] if rel.startswith("uploads/") else rel
+            (UPLOADS_ROOT / stripped).unlink(missing_ok=True)
+        except OSError as exc:
+            # Don't block the user's edit on a filesystem oddity (perms, race, etc.).
+            log.warning("Could not unlink %s during edit cleanup: %s", rel, exc)
 
     if session_id:
         new_photos = finalise_photos(session_id, set_id)
