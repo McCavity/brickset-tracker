@@ -134,7 +134,6 @@ async def import_page(request: Request):
 @app.post("/api/import/brickset/fetch", response_class=HTMLResponse)
 async def api_import_fetch(request: Request):
     """Fetch the user's Brickset collection and return a preview partial."""
-    import json
     from execution.brickset import fetch_owned_collection
     from navigation.set_manager import count_owned, find_local_rows_missing_brickset_id
 
@@ -197,7 +196,7 @@ async def api_import_fetch(request: Request):
             "local_qty":          local_qty,
             "default_import_qty": default_import_qty,
             "hint_key":           hint_key,
-            "payload_json":       json.dumps(payload),
+            "payload":            payload,
         })
 
     ctx["rows"] = rows

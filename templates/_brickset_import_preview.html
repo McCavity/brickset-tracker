@@ -67,7 +67,7 @@
 
           {# Hidden payload — server commits using these values #}
           <script type="application/json" class="import-row-payload">
-            {{ row.payload_json | safe }}
+            {{ row.payload | tojson }}
           </script>
         </div>
         {% endfor %}
