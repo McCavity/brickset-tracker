@@ -18,6 +18,7 @@ def make_set(
     price_paid: float | None = None,
     list_price: float | None = None,
     ean: str | None = None,
+    brickset_set_id: int | None = None,
     status: str = "complete",
 ) -> int:
     """Insert a set row and return its id."""
@@ -26,10 +27,10 @@ def make_set(
             """INSERT INTO sets
                (brand, set_number, name, part_count, condition, location,
                 date_of_purchase, note, theme, release_year, minifigs,
-                price_paid, list_price, ean, status)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                price_paid, list_price, ean, brickset_set_id, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (brand, set_number, name, part_count, condition, location,
              date_of_purchase, note, theme, release_year, minifigs,
-             price_paid, list_price, ean, status),
+             price_paid, list_price, ean, brickset_set_id, status),
         )
         return cur.lastrowid
