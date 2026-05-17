@@ -285,6 +285,58 @@ async def settings_brand_slugs(
     ))
 
 
+@app.post("/settings/brand-slugs/add")
+async def settings_brand_slugs_add(
+    brand: str = Form(...),
+    slug: str = Form(...),
+):
+    """Add a new brand → slug mapping. Redirects back to the settings page."""
+    import sqlite3
+    from execution.brand_slugs import add_brand_slug
+
+    brand_clean = brand.strip()
+    slug_clean = slug.strip()
+    if not brand_clean or not slug_clean:
+        return RedirectResponse(
+            "/settings/brand-slugs?error=empty",
+            status_code=303,
+        )
+    try:
+        add_brand_slug(brand_clean, slug_clean)
+    except sqlite3.IntegrityError:
+        return RedirectResponse(
+            f"/settings/brand-slugs?error=duplicate&brand={brand_clean.lower()}",
+            status_code=303,
+        )
+    return RedirectResponse("/settings/brand-slugs", status_code=303)
+
+
+@app.post("/settings/brand-slugs/{brand}/update")
+async def settings_brand_slugs_update(
+    brand: str,
+    slug: str = Form(...),
+):
+    """Update the slug for an existing brand. Silent no-op if brand doesn't exist."""
+    from execution.brand_slugs import update_brand_slug
+
+    slug_clean = slug.strip()
+    if not slug_clean:
+        return RedirectResponse(
+            "/settings/brand-slugs?error=empty",
+            status_code=303,
+        )
+    update_brand_slug(brand, slug_clean)
+    return RedirectResponse("/settings/brand-slugs", status_code=303)
+
+
+@app.post("/settings/brand-slugs/{brand}/delete")
+async def settings_brand_slugs_delete(brand: str):
+    """Remove a brand → slug mapping. Silent no-op if brand doesn't exist."""
+    from execution.brand_slugs import delete_brand_slug
+    delete_brand_slug(brand)
+    return RedirectResponse("/settings/brand-slugs", status_code=303)
+
+
 # ── API ────────────────────────────────────────────────────────────────────
 
 @app.post("/api/lookup")
