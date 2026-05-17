@@ -220,11 +220,35 @@ def get_set(set_id: int) -> dict | None:
 
 
 def update_set(set_id: int, data: dict, session_id: str | None = None) -> dict:
-    """Update an existing set record. Keeps existing own_photos unless removed."""
+    """Update an existing set record. Keeps existing own_photos unless removed.
+    Removed photos are unlinked from disk (S2)."""
     missing = [f for f in REQUIRED if not data.get(f)]
     status = "draft" if missing else "complete"
 
     kept_photos = json.loads(data.get("existing_own_photos") or "[]")
+
+    # S2 — unlink photos the user removed from the edit form.
+    # NOTE: lazy import so tests can monkeypatch execution.photos.UPLOADS_ROOT.
+    from execution.photos import UPLOADS_ROOT
+    with get_connection() as conn:
+        old_row = conn.execute(
+            "SELECT own_photos FROM sets WHERE id=?", (set_id,)
+        ).fetchone()
+    old_photos = json.loads(old_row["own_photos"] or "[]") if old_row else []
+    removed = set(old_photos) - set(kept_photos)
+    for rel in removed:
+        try:
+            # Paths in own_photos are relative to project root (e.g. "uploads/12/foo.jpg").
+            # Strip the leading "uploads/" so we can resolve against UPLOADS_ROOT
+            # (which itself ends in /uploads) without doubling the segment.
+            stripped = rel[len("uploads/"):] if rel.startswith("uploads/") else rel
+            (UPLOADS_ROOT / stripped).unlink(missing_ok=True)
+        except OSError as exc:
+            # Don't block the user's edit on a filesystem oddity (perms, race, etc.).
+            import logging
+            logging.getLogger(__name__).warning(
+                "Could not unlink %s during edit cleanup: %s", rel, exc
+            )
 
     with get_connection() as conn:
         conn.execute(
