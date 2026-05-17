@@ -326,11 +326,8 @@ function showCallout(msg, type) {
 function showDuplicateWarning(dupes) {
   const callout = document.getElementById('duplicate-callout');
   const text    = document.getElementById('duplicate-text');
-  const lang    = document.documentElement.lang;
-  const msg     = lang === 'de'
-    ? `Dieses Set existiert bereits ${dupes.length}× in deiner Sammlung.`
-    : `This set already exists ${dupes.length}× in your collection.`;
-  text.textContent = msg;
+  const tpl     = {{ t('errors.duplicate_warning', count='__N__') | tojson }};
+  text.textContent = tpl.replace('__N__', dupes.length);
   callout.classList.remove('hidden');
 }
 

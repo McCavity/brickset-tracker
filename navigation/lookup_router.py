@@ -9,6 +9,7 @@ from execution.ean_lookup import resolve_ean
 from execution.scraper import scrape_set
 from execution.brand_slugs import brand_to_slug, ensure_brand_slug
 from execution.brickset import fetch_set
+from navigation.set_manager import _find_duplicates
 
 log = logging.getLogger(__name__)
 
@@ -74,6 +75,10 @@ async def _flow1(brand: str, set_number: str, ean: str | None = None) -> dict:
     prefill: dict = {"brand": brand, "set_number": set_number}
     if ean:
         prefill["ean"] = ean
+
+    duplicates = _find_duplicates(brand, set_number)
+    if duplicates:
+        prefill["duplicates"] = duplicates
 
     # ── merlinssteine.de scrape ─────────────────────────────────────
     ms_result    = await scrape_set(slug, set_number)
