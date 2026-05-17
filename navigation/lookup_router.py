@@ -120,13 +120,18 @@ async def _flow1(brand: str, set_number: str, ean: str | None = None) -> dict:
 
 
 def _merge_from_merlinssteine(prefill: dict, result: dict) -> None:
-    """Copy merlinssteine fields into prefill, only when they have truthy values."""
+    """Copy merlinssteine fields into prefill, only when they have truthy values.
+
+    The extracted Listenpreis flows to `list_price` (not `price_paid`); the
+    system can't know what the user actually paid, so `price_paid` stays
+    blank for the user to fill in.
+    """
     field_map = (
         ("name",         result.get("name")),
         ("part_count",   result.get("part_count")),
         ("theme",        result.get("theme")),
         ("release_year", result.get("release_year")),
-        ("price_paid",   result.get("price")),
+        ("list_price",   result.get("list_price")),
     )
     for key, value in field_map:
         if value:
@@ -144,12 +149,14 @@ def _merge_from_brickset(prefill: dict, bs: dict) -> None:
     """Copy Brickset fields into prefill, filling only the gaps merlinssteine left.
 
     `brickset_set_id` is always set (Brickset is the authoritative source).
+    `list_price` is gap-filled — merlinssteine's Listenpreis wins when present.
     """
     field_map = (
         ("name",         bs.get("name")),
         ("part_count",   bs.get("pieces")),
         ("theme",        bs.get("theme")),
         ("release_year", bs.get("year")),
+        ("list_price",   bs.get("list_price")),
     )
     for key, value in field_map:
         if value and not prefill.get(key):
