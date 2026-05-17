@@ -868,3 +868,194 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
 .flash-banner {
   margin-bottom: var(--sp-4);
 }
+
+/* ---------- Set-Name Link on List Cards --------------------------- */
+.set-card__name-link {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+.set-card__name-link:hover .set-card__name {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  color: var(--accent);
+}
+
+/* ---------- Details Page ------------------------------------------ */
+.details-actionbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--rule);
+}
+.details-actionbar .spacer { flex: 1; }
+
+.details-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.details-header__left { min-width: 0; flex: 1; }
+.details-header__kicker {
+  font: 500 11px/1 var(--font-body);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: var(--sp-2);
+}
+.details-header__name {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.15;
+  color: var(--fg-heading);
+}
+.details-header__tags {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-5);
+}
+@media (min-width: 768px) {
+  .details-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.details-photos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.details-photo-main {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rule-strong);
+  cursor: zoom-in;
+}
+.details-photo-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--weiss);
+}
+.details-photo-main svg { width: 64px; height: 64px; }
+
+.details-photo-thumbs {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.details-photo-thumb {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  background: var(--weiss);
+  cursor: zoom-in;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.details-photo-thumb:hover { border-color: var(--kuestenblau); }
+.details-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.details-photo-divider {
+  margin-top: var(--sp-3);
+  font: 500 10px/1 var(--font-body);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  padding-bottom: var(--sp-1);
+  border-bottom: 1px solid var(--rule);
+}
+
+.details-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+.details-meta__section { }
+.details-meta__heading {
+  font: 500 12px/1 var(--font-body);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--rule);
+}
+.details-meta__list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--sp-2) var(--sp-4);
+  font-size: 14px;
+}
+.details-meta__list dt {
+  font: 400 13px/1.4 var(--font-body);
+  color: var(--fg-muted);
+}
+.details-meta__list dd {
+  font: 400 14px/1.4 var(--font-body);
+  color: var(--fg);
+}
+.details-meta__links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.details-meta__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font: 400 14px/1 var(--font-body);
+  color: var(--accent);
+  text-decoration: none;
+}
+.details-meta__links a:hover { text-decoration: underline; }
+
+/* ---------- Lightbox ---------------------------------------------- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  padding: var(--sp-5);
+}
+.lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  box-shadow: var(--shadow-floating);
+}
