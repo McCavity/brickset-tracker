@@ -78,6 +78,25 @@
     "results_count":      "{shown} of {total} sets",
     "no_matches":         "No sets match these filters"
   },
+  "details": {
+    "back":                 "← Back to collection",
+    "section_numbers":      "Numbers",
+    "section_where":        "Where & how",
+    "section_external":     "External links",
+    "web_images_label":     "Web images",
+    "field_parts":          "Parts:",
+    "field_minifigs":       "Minifigs:",
+    "field_released":       "Released:",
+    "field_purchased":      "Purchased:",
+    "field_price_paid":     "Price paid:",
+    "field_list_price":     "List price:",
+    "field_ean":            "EAN:",
+    "field_location":       "Location:",
+    "field_theme":          "Theme:",
+    "field_note":           "Note:",
+    "link_brickset":        "Brickset page",
+    "link_merlinssteine":   "merlinssteine.de page"
+  },
   "import": {
     "title":                 "Import from Brickset",
     "intro":                 "This will pull every set you've marked as owned on Brickset and let you preview before importing.",

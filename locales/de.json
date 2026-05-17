@@ -78,6 +78,25 @@
     "results_count":      "{shown} von {total} Sets",
     "no_matches":         "Keine Sets entsprechen diesen Filtern"
   },
+  "details": {
+    "back":                 "← Zurück zur Sammlung",
+    "section_numbers":      "Zahlen",
+    "section_where":        "Wo & wie",
+    "section_external":     "Externe Links",
+    "web_images_label":     "Web-Bilder",
+    "field_parts":          "Teile:",
+    "field_minifigs":       "Minifiguren:",
+    "field_released":       "Erschienen:",
+    "field_purchased":      "Gekauft:",
+    "field_price_paid":     "Kaufpreis:",
+    "field_list_price":     "Listenpreis:",
+    "field_ean":            "EAN:",
+    "field_location":       "Standort:",
+    "field_theme":          "Thema:",
+    "field_note":           "Notiz:",
+    "link_brickset":        "Brickset-Seite",
+    "link_merlinssteine":   "merlinssteine.de-Seite"
+  },
   "import": {
     "title":                 "Aus Brickset importieren",
     "intro":                 "Hierbei werden alle Sets, die du auf Brickset als eigen markiert hast, abgerufen und zur Vorschau angezeigt.",
