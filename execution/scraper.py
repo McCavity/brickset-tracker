@@ -14,6 +14,9 @@ from execution.rate_limit import check_quota, increment_quota
 
 log = logging.getLogger(__name__)
 
+# Seed data for the brand_slugs table. Read at app startup by init_db()
+# via INSERT OR IGNORE; not used at request time. See execution/brand_slugs.py
+# for the runtime lookup.
 BRAND_SLUGS: dict[str, str] = {
     "bluebrixx":  "bb",
     "blue brixx": "bb",
@@ -28,10 +31,6 @@ BRAND_SLUGS: dict[str, str] = {
 
 UA = "BricksetTracker/1.0 (personal collection tool; single-user)"
 BASE = "https://www.merlinssteine.de"
-
-
-def brand_to_slug(brand: str) -> str:
-    return BRAND_SLUGS.get(brand.lower().strip(), brand.lower().strip().replace(" ", "-"))
 
 
 async def scrape_set(brand_slug: str, set_number: str) -> dict:

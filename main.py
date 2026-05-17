@@ -301,7 +301,7 @@ async def details_page(request: Request, set_id: int):
     if not s:
         return RedirectResponse("/", status_code=303)
 
-    from execution.scraper import brand_to_slug
+    from execution.brand_slugs import brand_to_slug
     brickset_url = (
         f"https://brickset.com/sets/{s['set_number']}-1/"
         if s.get("brickset_set_id") is not None else None

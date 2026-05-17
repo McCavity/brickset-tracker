@@ -6,7 +6,8 @@ import logging
 
 from execution.db import get_connection
 from execution.ean_lookup import resolve_ean
-from execution.scraper import brand_to_slug, scrape_set
+from execution.scraper import scrape_set
+from execution.brand_slugs import brand_to_slug, ensure_brand_slug
 from execution.brickset import fetch_set
 
 log = logging.getLogger(__name__)
@@ -82,6 +83,10 @@ async def _flow1(brand: str, set_number: str, ean: str | None = None) -> dict:
         _merge_from_merlinssteine(prefill, ms_result)
         if ms_result.get("ean") and not ean:
             _ean_cache_write(ms_result["ean"], prefill["brand"], set_number, "merlinssteine")
+        # Auto-populate brand_slugs so future settings-page browsing reflects
+        # every brand the user has successfully used. Idempotent — no-op for
+        # already-known brands.
+        ensure_brand_slug(brand, slug)
 
     # ── Brickset enrichment (LEGO only — always tried) ─────────────
     bs_succeeded = False
