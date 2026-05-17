@@ -90,3 +90,75 @@
 {% endif %}
 
 {% endblock %}
+
+{% block scripts %}
+<script>
+// ── Inline edit mode for brand-slug rows ───────────────────────────────────
+document.querySelectorAll('.brand-slug-table tbody tr').forEach(row => {
+  const display = row.querySelector('.brand-slug-table__slug-display');
+  const input   = row.querySelector('.brand-slug-table__slug-input');
+  const editBtn   = row.querySelector('.brand-slug-edit-btn');
+  const saveBtn   = row.querySelector('.brand-slug-save-btn');
+  const cancelBtn = row.querySelector('.brand-slug-cancel-btn');
+  const deleteBtn = row.querySelector('.brand-slug-delete-btn');
+  if (!display || !input || !editBtn) return;
+
+  const brand = row.dataset.brand;
+
+  function enterEditMode() {
+    display.classList.add('hidden');
+    input.classList.remove('hidden');
+    editBtn.classList.add('hidden');
+    deleteBtn.classList.add('hidden');
+    saveBtn.classList.remove('hidden');
+    cancelBtn.classList.remove('hidden');
+    input.focus();
+    input.select();
+  }
+
+  function leaveEditMode() {
+    display.classList.remove('hidden');
+    input.classList.add('hidden');
+    editBtn.classList.remove('hidden');
+    deleteBtn.classList.remove('hidden');
+    saveBtn.classList.add('hidden');
+    cancelBtn.classList.add('hidden');
+  }
+
+  editBtn.addEventListener('click', enterEditMode);
+  cancelBtn.addEventListener('click', () => {
+    input.value = input.dataset.original;
+    leaveEditMode();
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    const newSlug = input.value.trim();
+    if (!newSlug) {
+      input.focus();
+      return;
+    }
+    saveBtn.disabled = true;
+    const body = new FormData();
+    body.append('slug', newSlug);
+    const r = await fetch(`/settings/brand-slugs/${encodeURIComponent(brand)}/update`,
+                          { method: 'POST', body });
+    saveBtn.disabled = false;
+    if (r.ok) {
+      // The redirect was followed by fetch; update the DOM in place
+      // to reflect the new value, then leave edit mode.
+      display.textContent = newSlug;
+      input.dataset.original = newSlug;
+      leaveEditMode();
+    } else {
+      alert('Update failed: ' + r.status);
+    }
+  });
+
+  // Enter = save, Esc = cancel
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter')      { e.preventDefault(); saveBtn.click(); }
+    else if (e.key === 'Escape'){ e.preventDefault(); cancelBtn.click(); }
+  });
+});
+</script>
+{% endblock %}

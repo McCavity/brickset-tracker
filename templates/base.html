@@ -87,8 +87,17 @@
   }
   document.getElementById('delete-confirm-btn').addEventListener('click', async () => {
     if (!_deleteId) return;
-    await fetch(`/api/sets/${_deleteId}/delete`, { method: 'POST' });
-    window.location.href = '/';
+    let url, redirect;
+    if (typeof _deleteId === 'string' && _deleteId.startsWith('brand-slug:')) {
+      const brand = _deleteId.slice('brand-slug:'.length);
+      url = `/settings/brand-slugs/${encodeURIComponent(brand)}/delete`;
+      redirect = '/settings/brand-slugs';
+    } else {
+      url = `/api/sets/${_deleteId}/delete`;
+      redirect = '/';
+    }
+    await fetch(url, { method: 'POST' });
+    window.location.href = redirect;
   });
   document.getElementById('delete-modal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeDeleteModal();
