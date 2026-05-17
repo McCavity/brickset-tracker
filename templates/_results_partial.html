@@ -54,8 +54,15 @@
           {% if s.part_count %}
             <span>{{ "{:,}".format(s.part_count).replace(",", ".") }} {{ t('list.sort_parts') | lower }}</span>
           {% endif %}
-          {% if s.price_paid %}
-            <span>{{ "%.2f"|format(s.price_paid) }} €</span>
+          {% if s.price_paid is not none %}
+            <span>
+              {{ "%.2f"|format(s.price_paid) }} €
+              {% if s.list_price is not none and s.list_price != s.price_paid %}
+                <span class="text-muted">(von {{ "%.2f"|format(s.list_price) }} €)</span>
+              {% endif %}
+            </span>
+          {% elif s.list_price is not none %}
+            <span><span class="text-muted">{{ t('list.price_list') }}</span> {{ "%.2f"|format(s.list_price) }} €</span>
           {% endif %}
           {% if s.date_of_purchase %}
             <span class="mono">{{ s.date_of_purchase }}</span>
