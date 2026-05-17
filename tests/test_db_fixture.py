@@ -37,3 +37,12 @@ def test_factory_inserts_set(db):
     assert row["brand"] == "BlueBrixx"
     assert row["name"] == "Castle"
     assert row["part_count"] == 500
+
+
+def test_factory_accepts_list_price(db):
+    """list_price added in Iteration 3.7; factory backfilled to accept it."""
+    set_id = make_set(brand="LEGO", set_number="42171", name="McLaren", part_count=3893,
+                      list_price=449.99)
+    with get_connection() as conn:
+        row = conn.execute("SELECT list_price FROM sets WHERE id = ?", (set_id,)).fetchone()
+    assert row["list_price"] == 449.99

@@ -16,6 +16,7 @@ def make_set(
     release_year: int | None = None,
     minifigs: int | None = None,
     price_paid: float | None = None,
+    list_price: float | None = None,
     ean: str | None = None,
     status: str = "complete",
 ) -> int:
@@ -25,10 +26,10 @@ def make_set(
             """INSERT INTO sets
                (brand, set_number, name, part_count, condition, location,
                 date_of_purchase, note, theme, release_year, minifigs,
-                price_paid, ean, status)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                price_paid, list_price, ean, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (brand, set_number, name, part_count, condition, location,
              date_of_purchase, note, theme, release_year, minifigs,
-             price_paid, ean, status),
+             price_paid, list_price, ean, status),
         )
         return cur.lastrowid
