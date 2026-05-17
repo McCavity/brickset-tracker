@@ -196,3 +196,49 @@ def test_commit_handles_empty_rows_list(db):
     # Should redirect with 0/0 counts
     assert "imported=0" in r.headers.get("location", "")
     assert "backfilled=0" in r.headers.get("location", "")
+
+
+def test_commit_ignores_tampered_local_ids_missing_bs_id(db):
+    """F2 — A client must not be able to backfill brickset_set_id onto a
+    row of a different brand+set_number by passing a tampered id list."""
+    from tests.factories import make_set
+    from fastapi.testclient import TestClient
+    from main import app
+    from execution.db import get_connection
+
+    # Victim: an UNRELATED row that the attacker is trying to corrupt.
+    victim_id = make_set(brand="LEGO", set_number="99999", brickset_set_id=None)
+    # Legitimate row to backfill (matches the payload's brand+set_number):
+    legit_id  = make_set(brand="LEGO", set_number="10298", brickset_set_id=None)
+
+    body = {
+        "rows": [{
+            "brand":           "LEGO",
+            "set_number":      "10298",
+            "name":            "Vespa",
+            "part_count":      1106,
+            "theme":           "Creator Expert",
+            "release_year":    2022,
+            "ean":             None,
+            "web_images":      [],
+            "brickset_set_id": 23456,
+            "import_qty":      0,
+            # Tampered: includes the victim's id alongside the legit id.
+            "local_ids_missing_bs_id": [victim_id, legit_id],
+            "preview_local_qty": 1,
+        }],
+    }
+
+    with TestClient(app) as client:
+        client.post("/api/import/brickset/commit", json=body)
+
+    with get_connection() as conn:
+        victim = conn.execute(
+            "SELECT brickset_set_id FROM sets WHERE id=?", (victim_id,)
+        ).fetchone()
+        legit  = conn.execute(
+            "SELECT brickset_set_id FROM sets WHERE id=?", (legit_id,)
+        ).fetchone()
+
+    assert victim["brickset_set_id"] is None, "Tampered id list must not touch unrelated rows"
+    assert legit["brickset_set_id"] == 23456,  "Legit row must still be backfilled"

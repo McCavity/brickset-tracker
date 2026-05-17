@@ -219,7 +219,7 @@ async def api_import_commit(request: Request):
 
     Returns a 303 redirect to /?imported=N&backfilled=K.
     """
-    from navigation.set_manager import commit_import_rows
+    from navigation.set_manager import commit_import_rows, find_local_rows_missing_brickset_id
 
     body = await request.json()
     raw_rows = body.get("rows") or []
@@ -248,6 +248,11 @@ async def api_import_commit(request: Request):
         except (TypeError, ValueError):
             qty = 0
 
+        # F2: re-derive missing-id list from the DB; ignore client payload.
+        missing_ids = find_local_rows_missing_brickset_id(
+            str(row["brand"]), str(row["set_number"])
+        )
+
         sanitised.append({
             "brand":                   str(row["brand"]),
             "set_number":              str(row["set_number"]),
@@ -259,7 +264,7 @@ async def api_import_commit(request: Request):
             "web_images":              row.get("web_images") or [],
             "brickset_set_id":         int(row["brickset_set_id"]),
             "import_qty":              qty,
-            "local_ids_missing_bs_id": [int(x) for x in (row.get("local_ids_missing_bs_id") or [])],
+            "local_ids_missing_bs_id": missing_ids,
         })
 
     result = commit_import_rows(sanitised)
