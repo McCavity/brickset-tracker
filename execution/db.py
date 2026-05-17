@@ -72,3 +72,21 @@ def init_db() -> None:
             conn.execute("ALTER TABLE sets ADD COLUMN list_price REAL")
         except sqlite3.OperationalError:
             pass
+
+        # ── brand_slugs table (Iteration 4.5) ────────────────────────────
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS brand_slugs (
+                brand      TEXT PRIMARY KEY,
+                slug       TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
+        # Seed from the existing hardcoded dict. INSERT OR IGNORE ensures
+        # this is idempotent and never overwrites user-edited rows.
+        from execution.scraper import BRAND_SLUGS
+        for brand, slug in BRAND_SLUGS.items():
+            conn.execute(
+                "INSERT OR IGNORE INTO brand_slugs (brand, slug) VALUES (?, ?)",
+                (brand, slug),
+            )
