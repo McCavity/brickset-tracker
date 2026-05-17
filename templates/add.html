@@ -102,9 +102,20 @@
     </div>
 
     <div class="field">
+      <label for="f-list-price">{{ t('add.list_price') }}</label>
+      <input type="text" inputmode="decimal" id="f-list-price" name="list_price"
+             value="{{ prefill.list_price or '' }}" style="font-family:var(--font-mono)">
+    </div>
+
+    <div class="field">
       <label for="f-price">{{ t('add.price_paid') }}</label>
-      <input type="text" inputmode="decimal" id="f-price" name="price_paid"
-             value="{{ prefill.price_paid or '' }}" style="font-family:var(--font-mono)">
+      <div style="display:flex;gap:var(--sp-2);align-items:center">
+        <input type="text" inputmode="decimal" id="f-price" name="price_paid"
+               value="{{ prefill.price_paid or '' }}" style="font-family:var(--font-mono);flex:1">
+        <button type="button" class="btn btn-ghost btn-sm" id="copy-list-to-price"
+                onclick="document.getElementById('f-price').value = document.getElementById('f-list-price').value"
+                title="{{ t('add.copy_from_list_price') }}">←</button>
+      </div>
     </div>
 
     <div class="field">
@@ -262,7 +273,7 @@ function applyPrefill(p) {
   const map = {
     brand: 'f-brand', set_number: 'f-setnumber', name: 'f-name',
     part_count: 'f-parts', theme: 'f-theme', release_year: 'f-year',
-    price_paid: 'f-price', ean: 'f-ean', note: 'f-note',
+    price_paid: 'f-price', list_price: 'f-list-price', ean: 'f-ean', note: 'f-note',
     condition: 'f-condition', location: 'f-location',
     date_of_purchase: 'f-date',
   };
@@ -344,7 +355,7 @@ function showCandidates(candidates) {
 
 // ── Form state persistence (survives language switch) ────────────────────
 const _FIELD_IDS = ['f-brand','f-setnumber','f-name','f-parts','f-condition',
-  'f-location','f-date','f-price','f-theme','f-year','f-minifigs','f-ean','f-note'];
+  'f-location','f-date','f-price','f-list-price','f-theme','f-year','f-minifigs','f-ean','f-note'];
 
 function _saveAddState() {
   const data = {};
