@@ -16,6 +16,9 @@
         <img src="/static/logo-wordmark.svg" alt="Verklemmt und zugenäht!">
       </a>
       <div class="site-header__actions">
+        <a href="/settings/brand-slugs" class="settings-link" title="{{ t('nav.settings') }}">
+          <i data-lucide="settings" style="width:16px;height:16px"></i>
+        </a>
         <form action="/set-lang" method="post" style="display:inline">
           {% if lang == "de" %}
             <input type="hidden" name="lang" value="en">
