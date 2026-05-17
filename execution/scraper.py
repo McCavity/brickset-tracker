@@ -111,15 +111,15 @@ def _parse(html: str, url: str) -> dict:
         if part_count:
             break
 
-    # --- Price (Listenpreis) ---
-    price = None
+    # --- List price (Listenpreis) ---
+    list_price = None
     for ul in soup.find_all("ul"):
         for li in ul.find_all("li"):
             text = li.get_text(strip=True)
             if text.startswith("Listenpreis:"):
                 m = re.search(r"([\d.,]+)\s*EUR", text)
                 if m:
-                    price = _parse_price(m.group(1))
+                    list_price = _parse_price(m.group(1))
                 break
 
     # --- Image (OG tag, then CDN fallback) ---
@@ -134,7 +134,7 @@ def _parse(html: str, url: str) -> dict:
         "name":         name,
         "ean":          ean,
         "part_count":   part_count,
-        "price":        price,
+        "list_price":   list_price,
         "theme":        theme,
         "release_year": release_year,
         "image_url":    image_url,
