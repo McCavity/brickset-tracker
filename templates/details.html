@@ -102,7 +102,89 @@
     {% endif %}
   </div>
 
-  {# ── Metadata column added in Task 6 ──────────────────────────── #}
+  {# ── Metadata column (right column on desktop) ────────────────── #}
+  <div class="details-meta">
+
+    {# Section: Numbers — rendered only if at least one field present #}
+    {% if set.part_count or set.minifigs or set.release_year or set.date_of_purchase or set.price_paid is not none or set.list_price is not none or set.ean %}
+    <div class="details-meta__section">
+      <h2 class="details-meta__heading">{{ t('details.section_numbers') }}</h2>
+      <dl class="details-meta__list">
+        {% if set.part_count %}
+          <dt>{{ t('details.field_parts') }}</dt>
+          <dd>{{ "{:,}".format(set.part_count).replace(",", ".") }}</dd>
+        {% endif %}
+        {% if set.minifigs %}
+          <dt>{{ t('details.field_minifigs') }}</dt>
+          <dd>{{ set.minifigs }}</dd>
+        {% endif %}
+        {% if set.release_year %}
+          <dt>{{ t('details.field_released') }}</dt>
+          <dd>{{ set.release_year }}</dd>
+        {% endif %}
+        {% if set.date_of_purchase %}
+          <dt>{{ t('details.field_purchased') }}</dt>
+          <dd class="mono">{{ set.date_of_purchase }}</dd>
+        {% endif %}
+        {% if set.price_paid is not none %}
+          <dt>{{ t('details.field_price_paid') }}</dt>
+          <dd>{{ "%.2f"|format(set.price_paid) }} €</dd>
+        {% endif %}
+        {% if set.list_price is not none %}
+          <dt>{{ t('details.field_list_price') }}</dt>
+          <dd>{{ "%.2f"|format(set.list_price) }} €</dd>
+        {% endif %}
+        {% if set.ean %}
+          <dt>{{ t('details.field_ean') }}</dt>
+          <dd class="mono">{{ set.ean }}</dd>
+        {% endif %}
+      </dl>
+    </div>
+    {% endif %}
+
+    {# Section: Where & how #}
+    {% if set.location or set.theme or set.note %}
+    <div class="details-meta__section">
+      <h2 class="details-meta__heading">{{ t('details.section_where') }}</h2>
+      <dl class="details-meta__list">
+        {% if set.location %}
+          <dt>{{ t('details.field_location') }}</dt>
+          <dd>{{ set.location }}</dd>
+        {% endif %}
+        {% if set.theme %}
+          <dt>{{ t('details.field_theme') }}</dt>
+          <dd>{{ set.theme }}</dd>
+        {% endif %}
+        {% if set.note %}
+          <dt>{{ t('details.field_note') }}</dt>
+          <dd style="white-space:pre-wrap">{{ set.note }}</dd>
+        {% endif %}
+      </dl>
+    </div>
+    {% endif %}
+
+    {# Section: External links — merlinssteine always, Brickset conditional #}
+    <div class="details-meta__section">
+      <h2 class="details-meta__heading">{{ t('details.section_external') }}</h2>
+      <ul class="details-meta__links">
+        {% if brickset_url %}
+        <li>
+          <a href="{{ brickset_url }}" target="_blank" rel="noopener">
+            <i data-lucide="external-link" style="width:13px;height:13px"></i>
+            {{ t('details.link_brickset') }}
+          </a>
+        </li>
+        {% endif %}
+        <li>
+          <a href="{{ merlinssteine_url }}" target="_blank" rel="noopener">
+            <i data-lucide="external-link" style="width:13px;height:13px"></i>
+            {{ t('details.link_merlinssteine') }}
+          </a>
+        </li>
+      </ul>
+    </div>
+
+  </div>{# /details-meta #}
 
 </div>{# /details-grid #}
 
