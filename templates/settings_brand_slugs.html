@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ t('settings.brand_slugs.title') }} · Brickset Tracker{% endblock %}
+{% block header_title %}{{ t('settings.brand_slugs.title') }}{% endblock %}
+
+{% block content %}
+<h1>{{ t('settings.brand_slugs.title') }}</h1>
+<table>
+  <thead>
+    <tr><th>{{ t('settings.brand_slugs.col_brand') }}</th>
+        <th>{{ t('settings.brand_slugs.col_slug') }}</th></tr>
+  </thead>
+  <tbody>
+    {% for pair in pairs %}
+    <tr><td>{{ pair.brand }}</td><td>{{ pair.slug }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

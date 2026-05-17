@@ -270,6 +270,21 @@ async def api_import_commit(request: Request):
     )
 
 
+@app.get("/settings/brand-slugs", response_class=HTMLResponse)
+async def settings_brand_slugs(
+    request: Request,
+    error: str | None = None,
+    brand: str | None = None,
+):
+    """Brand → merlinssteine.de URL slug mappings (settings)."""
+    from execution.brand_slugs import list_brand_slugs
+    pairs = list_brand_slugs()
+    return templates.TemplateResponse(request, "settings_brand_slugs.html", context=_ctx(
+        request, pairs=pairs,
+        error=error, error_brand=brand,
+    ))
+
+
 # ── API ────────────────────────────────────────────────────────────────────
 
 @app.post("/api/lookup")
