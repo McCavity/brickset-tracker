@@ -53,6 +53,57 @@
   </div>
 </div>
 
-{# Tasks 5-7 add photo gallery, metadata sections, lightbox below this point. #}
+{# ── Body grid: photos left, metadata right ───────────────────────── #}
+<div class="details-grid">
+
+  {# ── Photo gallery (left column on desktop) ────────────────────── #}
+  <div class="details-photos">
+    {% set has_own = set.own_photos and set.own_photos | length > 0 %}
+    {% set has_web = set.web_images and set.web_images | length > 0 %}
+
+    {% if has_own %}
+      {% set main = '/' ~ set.own_photos[0] %}
+    {% elif has_web %}
+      {% set main = '/api/proxy-image?url=' ~ (set.web_images[0] | urlencode) %}
+    {% else %}
+      {% set main = '' %}
+    {% endif %}
+
+    <div class="details-photo-main" onclick="openLightbox(this.querySelector('img'))">
+      {% if main %}
+        <img src="{{ main }}" alt="{{ set.name }}">
+      {% else %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="20" cy="21" r="6"/><circle cx="36" cy="21" r="6"/>
+          <rect x="10" y="27" width="36" height="16" rx="3"/>
+        </svg>
+      {% endif %}
+    </div>
+
+    {% if has_own %}
+    <div class="details-photo-thumbs" data-photo-group="own">
+      {% for photo_path in set.own_photos %}
+      <div class="details-photo-thumb" onclick="openLightbox(this.querySelector('img'))">
+        <img src="/{{ photo_path }}" alt="">
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if has_web %}
+    <div class="details-photo-divider">{{ t('details.web_images_label') }}</div>
+    <div class="details-photo-thumbs" data-photo-group="web">
+      {% for url in set.web_images %}
+      <div class="details-photo-thumb" onclick="openLightbox(this.querySelector('img'))">
+        <img src="/api/proxy-image?url={{ url | urlencode }}" alt="">
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Metadata column added in Task 6 ──────────────────────────── #}
+
+</div>{# /details-grid #}
 
 {% endblock %}
