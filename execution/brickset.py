@@ -84,8 +84,14 @@ async def _query(set_number: str) -> dict:
 
 
 async def sync_owned(set_id: int, qty_owned: int) -> dict:
-    """Mark a set as owned on Brickset with the given quantity."""
-    params = json.dumps({"own": 1, "qtyOwned": qty_owned, "want": 0, "notes": " "})
+    """Mark a set as owned on Brickset with the given quantity.
+
+    Sends only `qtyOwned` in the params object — Brickset infers ownership
+    from a non-zero count. Including the `own` field alongside `qtyOwned`
+    has a server-side quirk where `own: 1` overrides `qtyOwned` and the
+    final stored count is clamped to 1.
+    """
+    params = json.dumps({"qtyOwned": qty_owned})
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             r = await client.post(f"{BASE}/setCollection", data={
