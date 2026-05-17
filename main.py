@@ -295,6 +295,29 @@ async def api_save_set(request: Request):
     return JSONResponse(result)
 
 
+@app.get("/sets/{set_id}", response_class=HTMLResponse)
+async def details_page(request: Request, set_id: int):
+    s = get_set(set_id)
+    if not s:
+        return RedirectResponse("/", status_code=303)
+
+    from execution.scraper import brand_to_slug
+    brickset_url = (
+        f"https://brickset.com/sets/{s['set_number']}-1/"
+        if s.get("brickset_set_id") is not None else None
+    )
+    merlinssteine_url = (
+        f"https://www.merlinssteine.de/sets/"
+        f"{brand_to_slug(s['brand'])}-{s['set_number'].lower()}/"
+    )
+
+    return templates.TemplateResponse(request, "details.html", context=_ctx(
+        request, set=s,
+        brickset_url=brickset_url,
+        merlinssteine_url=merlinssteine_url,
+    ))
+
+
 @app.get("/sets/{set_id}/edit", response_class=HTMLResponse)
 async def edit_page(request: Request, set_id: int):
     s = get_set(set_id)
