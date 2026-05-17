@@ -125,6 +125,41 @@ The two existing call sites — `main.py:304` (details_page route) and `navigati
 
 The old `brand_to_slug` function in `execution/scraper.py` is removed.
 
+## Auto-Population on Successful Lookup
+
+When a merlinssteine.de scrape **succeeds** for a brand+set_number pair, the resolved `(brand, slug)` is persisted to the `brand_slugs` table via `INSERT OR IGNORE`. Behaviour:
+
+- Brand already in the table (LEGO, Pantasy, …) → no-op
+- Brand is new (e.g. user added an "Ikea" set and merlinssteine knew it under `ikea-12345`) → row inserted with the slug that actually worked
+
+Net effect: the settings page reflects every brand the user has successfully used. No manual entry required for brands whose name IS the slug. Brands whose slug differs from the name (Pantasy → `pant`, etc.) still need manual entry via the settings page if the initial scrape attempt with the fallback slug failed.
+
+Implementation: in `navigation/lookup_router.py:_flow1`, after the merlinssteine `scrape_set` returns `status == "success"`, call:
+
+```python
+from execution.brand_slugs import add_brand_slug
+try:
+    add_brand_slug(brand, slug)
+except sqlite3.IntegrityError:
+    pass  # Brand already in table — expected, ignore
+```
+
+Or, more cleanly, use a dedicated helper `ensure_brand_slug(brand, slug)` in `execution/brand_slugs.py` that wraps `INSERT OR IGNORE`:
+
+```python
+def ensure_brand_slug(brand: str, slug: str) -> None:
+    """Insert a brand → slug pair if not already present. Idempotent."""
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO brand_slugs (brand, slug) VALUES (?, ?)",
+            (brand.lower().strip(), slug.lower().strip()),
+        )
+```
+
+The `ensure_brand_slug` helper keeps `_flow1` clean (no exception handling) and matches the same `INSERT OR IGNORE` semantics used by the seed migration in `init_db()`. This is the variant we'll implement.
+
+When a scrape **fails** (rate limit, 404, etc.), nothing is auto-added — we don't want to persist a guessed slug that didn't actually work.
+
 ## Page Layout
 
 Simple two-section page: add form at top, list table below.
@@ -192,9 +227,9 @@ The page accepts optional `?error=duplicate&brand=X` or `?error=empty` query par
 | File | Change |
 |---|---|
 | `execution/db.py` | Extend `init_db()` — create `brand_slugs` table + seed from `BRAND_SLUGS` dict |
-| `execution/brand_slugs.py` | **New** — `brand_to_slug()` (DB-backed), `list_brand_slugs`, `add_brand_slug`, `update_brand_slug`, `delete_brand_slug` |
+| `execution/brand_slugs.py` | **New** — `brand_to_slug()` (DB-backed), `list_brand_slugs`, `add_brand_slug`, `ensure_brand_slug` (idempotent INSERT OR IGNORE), `update_brand_slug`, `delete_brand_slug` |
 | `execution/scraper.py` | Keep `BRAND_SLUGS` dict (seed source); remove `brand_to_slug()` function; add comment explaining the dict's new role |
-| `navigation/lookup_router.py` | Change import: `from execution.scraper import brand_to_slug, scrape_set` → split: `from execution.scraper import scrape_set` and `from execution.brand_slugs import brand_to_slug` |
+| `navigation/lookup_router.py` | Change import: `from execution.scraper import brand_to_slug, scrape_set` → split: `from execution.scraper import scrape_set` and `from execution.brand_slugs import brand_to_slug, ensure_brand_slug`. In `_flow1`, after a successful scrape, call `ensure_brand_slug(brand, slug)` to auto-populate the table. |
 | `main.py` | Change lazy import in `details_page`: `from execution.scraper import brand_to_slug` → `from execution.brand_slugs import brand_to_slug`. Add four new routes (settings page + add/update/delete). |
 | `templates/base.html` | Add gear-icon link to site header, just left of language toggle. Bump CSS cache buster. |
 | `templates/settings_brand_slugs.html` | **New** — page with intro, add form, table, empty state, error banner |
@@ -219,6 +254,8 @@ No new dependencies. Schema change is additive and idempotent.
 - `test_update_brand_slug_for_missing_brand_is_noop`
 - `test_delete_brand_slug_removes_row`
 - `test_delete_brand_slug_for_missing_brand_is_noop`
+- `test_ensure_brand_slug_inserts_when_missing` — `ensure_brand_slug("foo", "f")` adds the row; subsequent `brand_to_slug("foo")` returns `"f"`
+- `test_ensure_brand_slug_noop_when_present` — calling `ensure_brand_slug("lego", "different-slug")` after the seed leaves `brand_to_slug("lego")` returning `"lego"` (the existing seed wins; ensure is idempotent and never overwrites)
 
 ### `tests/test_settings_routes.py`
 
