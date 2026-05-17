@@ -49,7 +49,9 @@
         <div class="set-card__kicker">
           {{ s.brand | upper }} · <span class="mono">{{ s.set_number }}</span>
         </div>
-        <div class="set-card__name" title="{{ s.name }}">{{ s.name }}</div>
+        <a href="/sets/{{ s.id }}" class="set-card__name-link" title="{{ s.name }}">
+          <div class="set-card__name">{{ s.name }}</div>
+        </a>
         <div class="set-card__meta">
           {% if s.part_count %}
             <span>{{ "{:,}".format(s.part_count).replace(",", ".") }} {{ t('list.sort_parts') | lower }}</span>
