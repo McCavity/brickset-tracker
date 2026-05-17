@@ -3,8 +3,56 @@
 {% block header_title %}{{ set.name }}{% endblock %}
 
 {% block content %}
-<div class="details">
-  <div class="details__kicker">{{ set.brand | upper }} · <span class="mono">{{ set.set_number }}</span></div>
-  <h1 class="details__name">{{ set.name }}</h1>
+
+{# ── Action bar ───────────────────────────────────────────────────── #}
+<div class="details-actionbar">
+  <a href="/" class="btn btn-ghost">
+    <i data-lucide="arrow-left" style="width:15px;height:15px"></i>
+    {{ t('details.back') }}
+  </a>
+  <span class="spacer"></span>
+  <a href="/sets/{{ set.id }}/edit" class="btn btn-secondary">
+    <i data-lucide="pencil" style="width:15px;height:15px"></i>
+    {{ t('edit.title') }}
+  </a>
+  <button class="btn btn-ghost"
+          onclick="openDeleteModal({{ set.id }}, '{{ set.name | replace("'", "\\'") }}')">
+    <i data-lucide="trash-2" style="width:15px;height:15px"></i>
+  </button>
+  {% if set.brickset_set_id is not none and set.brand | lower == 'lego' %}
+  <button class="btn btn-ghost" title="{{ t('add.sync_brickset') }}"
+          onclick="syncBrickset({{ set.id }}, this)">
+    <i data-lucide="refresh-cw" style="width:15px;height:15px"></i>
+  </button>
+  {% endif %}
 </div>
+
+{# ── Page header ──────────────────────────────────────────────────── #}
+{% set cond_class = {
+  'ovp':      'cond-ovp',
+  'im_bau':   'cond-im_bau',
+  'gebaut':   'cond-gebaut',
+  'abgebaut': 'cond-abgebaut',
+  'verkauft': 'cond-verkauft',
+} %}
+
+<div class="details-header">
+  <div class="details-header__left">
+    <div class="details-header__kicker">{{ set.brand | upper }} · <span class="mono">{{ set.set_number }}</span></div>
+    <h1 class="details-header__name">{{ set.name }}</h1>
+  </div>
+  <div class="details-header__tags">
+    {% if set.status == 'draft' %}
+      <span class="draft-badge">{{ t('list.draft_badge') }}</span>
+    {% endif %}
+    {% if set.condition %}
+      <span class="condition-tag {{ cond_class.get(set.condition, '') }}">
+        {{ t('condition.' ~ set.condition) }}
+      </span>
+    {% endif %}
+  </div>
+</div>
+
+{# Tasks 5-7 add photo gallery, metadata sections, lightbox below this point. #}
+
 {% endblock %}
