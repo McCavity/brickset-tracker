@@ -242,3 +242,39 @@ def test_commit_ignores_tampered_local_ids_missing_bs_id(db):
 
     assert victim["brickset_set_id"] is None, "Tampered id list must not touch unrelated rows"
     assert legit["brickset_set_id"] == 23456,  "Legit row must still be backfilled"
+
+
+def test_preview_preserves_bs_qty_zero(db):
+    """S4 — Brickset's qtyOwned: 0 must come through as bs_qty=0,
+    not get coerced to 1 by `or 1`."""
+    from fastapi.testclient import TestClient
+    from unittest.mock import AsyncMock, patch
+    from main import app
+
+    fake = {
+        "status": "ok",
+        "sets": [{
+            "set_number": "10298",
+            "set_id":     23456,
+            "name":       "Vespa 125",
+            "pieces":     1106,
+            "theme":      "Creator Expert",
+            "year":       2022,
+            "ean":        None,
+            "image_url":  None,
+            "qty_owned":  0,  # The case under test.
+        }],
+    }
+    with patch("execution.brickset.fetch_owned_collection",
+               new=AsyncMock(return_value=fake)):
+        with TestClient(app) as client:
+            r = client.post("/api/import/brickset/fetch")
+
+    assert r.status_code == 200
+    # The summary chip carries machine-readable totals as data-* attrs.
+    # bs_qty=0 ⇒ default_import_qty = max(0, 0 - 0) = 0 ⇒ will_create=0.
+    assert 'data-will-create="0"' in r.text
+    # The per-row qty label embeds bs_qty inside <strong>…</strong>.
+    assert '<strong>0</strong>' in r.text
+    # And the preview_local_qty snapshot must be 0 (no local rows exist).
+    assert '"preview_local_qty": 0' in r.text

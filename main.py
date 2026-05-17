@@ -165,7 +165,7 @@ async def api_import_fetch(request: Request):
         local_qty = count_owned(brand, set_number)
         missing_ids = find_local_rows_missing_brickset_id(brand, set_number)
 
-        bs_qty = s.get("qty_owned") or 1
+        bs_qty = s["qty_owned"] if s.get("qty_owned") is not None else 1
         default_import_qty = max(0, bs_qty - local_qty)
         will_create += default_import_qty
         will_backfill += len(missing_ids)
