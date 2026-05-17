@@ -185,6 +185,7 @@ async def api_import_fetch(request: Request):
             "web_images":      [s["image_url"]] if s.get("image_url") else [],
             "brickset_set_id": s["set_id"],
             "local_ids_missing_bs_id": missing_ids,
+            "preview_local_qty": local_qty,
         }
         rows.append({
             "set_number":         set_number,
@@ -265,6 +266,7 @@ async def api_import_commit(request: Request):
             "brickset_set_id":         int(row["brickset_set_id"]),
             "import_qty":              qty,
             "local_ids_missing_bs_id": missing_ids,
+            "preview_local_qty":       max(0, int(row.get("preview_local_qty") or 0)),
         })
 
     result = commit_import_rows(sanitised)

@@ -60,10 +60,13 @@ def test_backfills_existing_rows(db):
 def test_inserts_and_backfills_together(db):
     a = make_set(brand="LEGO", set_number="10298")
     b = make_set(brand="LEGO", set_number="10298")
-    result = commit_import_rows([_vespa_row(
+    row = _vespa_row(
         import_qty=2,
         local_ids_missing_bs_id=[a, b],
-    )])
+    )
+    # Preview saw 2 local rows; commit is asked to add 2 more (target = 4).
+    row["preview_local_qty"] = 2
+    result = commit_import_rows([row])
     assert result["created"] == 2
     assert result["backfilled"] == 2
     with get_connection() as conn:
@@ -71,6 +74,52 @@ def test_inserts_and_backfills_together(db):
             "SELECT COUNT(*) AS n FROM sets WHERE brand='LEGO' AND set_number='10298'"
         ).fetchone()["n"]
     assert total == 4  # 2 existing + 2 newly inserted
+
+
+def test_commit_is_idempotent_on_double_submit(db):
+    """F3 — Re-submitting the same payload after a successful commit inserts 0 new rows."""
+    row = _vespa_row(import_qty=3)
+    row["preview_local_qty"] = 0  # snapshot: nothing locally at preview time
+
+    first  = commit_import_rows([row])
+    second = commit_import_rows([row])
+
+    assert first["created"]  == 3
+    assert second["created"] == 0
+    with get_connection() as conn:
+        total = conn.execute(
+            "SELECT COUNT(*) AS n FROM sets WHERE brand='LEGO' AND set_number='10298'"
+        ).fetchone()["n"]
+    assert total == 3
+
+
+def test_commit_handles_concurrent_partial_progress(db):
+    """If another tab inserted 2 rows between preview and commit,
+    the commit must insert only the remainder (1)."""
+    row = _vespa_row(import_qty=3)
+    row["preview_local_qty"] = 0
+
+    # Simulate a concurrent tab inserting 2 rows before we commit.
+    make_set(brand="LEGO", set_number="10298")
+    make_set(brand="LEGO", set_number="10298")
+
+    result = commit_import_rows([row])
+
+    assert result["created"] == 1  # 3 desired - 2 already there = 1 new
+    with get_connection() as conn:
+        total = conn.execute(
+            "SELECT COUNT(*) AS n FROM sets WHERE brand='LEGO' AND set_number='10298'"
+        ).fetchone()["n"]
+    assert total == 3
+
+
+def test_commit_treats_missing_preview_local_qty_as_zero(db):
+    """Defensive: a payload lacking preview_local_qty must not regress
+    the happy-path insert count (treated as 0 = a fresh import)."""
+    row = _vespa_row(import_qty=2)
+    # Note: no preview_local_qty key set.
+    result = commit_import_rows([row])
+    assert result["created"] == 2
 
 
 def test_zero_qty_zero_backfill_is_noop(db):

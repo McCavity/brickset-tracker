@@ -298,17 +298,20 @@ def find_local_rows_missing_brickset_id(brand: str, set_number: str) -> list[int
 
 
 def commit_import_rows(rows: list[dict]) -> dict:
-    """Persist a batch of Brickset import rows.
+    """Persist a batch of Brickset import rows — idempotent under retries.
 
     Each row dict has:
       brand, set_number, name, part_count, theme, release_year, ean,
       web_images (list of str), brickset_set_id (int),
-      import_qty (int >= 0), local_ids_missing_bs_id (list[int]).
+      import_qty (int >= 0), local_ids_missing_bs_id (list[int]),
+      preview_local_qty (int, optional — defaults to 0).
 
     For each row:
       - UPDATEs brickset_set_id on every id in local_ids_missing_bs_id.
-      - INSERTs import_qty new rows with status='complete' and a note marking
-        them as Brickset imports.
+      - Inserts at most `import_qty` new rows, minus any rows the user
+        already added (by another tab, retry, etc.) since the preview
+        snapshot was taken. The current local count is read inside the
+        same transaction immediately before inserting (F3).
 
     Returns {"created": N, "backfilled": K} — total rows created/updated.
     """
@@ -319,7 +322,8 @@ def commit_import_rows(rows: list[dict]) -> dict:
 
     with get_connection() as conn:
         for row in rows:
-            # Backfill existing rows
+            brand      = row["brand"]
+            set_number = row["set_number"]
             existing_ids = row.get("local_ids_missing_bs_id") or []
             if existing_ids:
                 placeholders = ",".join("?" * len(existing_ids))
@@ -330,16 +334,25 @@ def commit_import_rows(rows: list[dict]) -> dict:
                 )
                 backfilled += cur.rowcount
 
-            # Insert new rows
-            qty = int(row.get("import_qty") or 0)
-            for _ in range(qty):
+            # F3 — idempotent insert: cap at the remaining desired count.
+            import_qty        = int(row.get("import_qty") or 0)
+            preview_local_qty = int(row.get("preview_local_qty") or 0)
+            current_local_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM sets "
+                "WHERE brand=? AND set_number=? AND status='complete'",
+                (brand, set_number),
+            ).fetchone()["n"]
+            delta_already_imported = max(0, current_local_count - preview_local_qty)
+            actual_insert = max(0, import_qty - delta_already_imported)
+
+            for _ in range(actual_insert):
                 conn.execute(
                     """INSERT INTO sets
                        (brand, set_number, name, part_count, theme, release_year,
                         ean, web_images, brickset_set_id, status, note)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'complete', ?)""",
                     (
-                        row["brand"], row["set_number"], row["name"],
+                        brand, set_number, row["name"],
                         row.get("part_count"), row.get("theme"),
                         row.get("release_year"), row.get("ean"),
                         json.dumps(row.get("web_images") or []),
