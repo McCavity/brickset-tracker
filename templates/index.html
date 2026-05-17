@@ -131,20 +131,6 @@
 
 {% block scripts %}
 <script>
-// ── Existing Brickset sync handler ────────────────────────────────────────
-async function syncBrickset(id, btn) {
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
-  const r = await fetch(`/api/sets/${id}/sync-brickset`, { method: 'POST' });
-  const data = await r.json();
-  lucide.createIcons();
-  btn.disabled = false;
-  btn.innerHTML = data.status === 'success'
-    ? '<i data-lucide="check" style="width:13px;height:13px"></i>'
-    : '<i data-lucide="alert-circle" style="width:13px;height:13px"></i>';
-  lucide.createIcons();
-}
-
 // ── Live search + filter ──────────────────────────────────────────────────
 (function () {
   const searchInput = document.getElementById('search-input');
