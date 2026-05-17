@@ -181,15 +181,16 @@ def _map_owned_set(s: dict) -> dict:
     """Extension of _map_set that also extracts qtyOwned from the collection
     object Brickset returns when the request includes the user's userHash.
 
-    The 'set_number' returned here is the bare/variant-suffixed number from
-    Brickset's 'number' field — used for matching against local rows by
-    brand+set_number.
+    The 'set_number' returned here is the bare number from Brickset's 'number'
+    field with any '-N' variant suffix stripped — used for matching against
+    local rows by brand+set_number (which users typically enter without suffix).
     """
     base = _map_set(s)
     coll = s.get("collection") or {}
     qty  = coll.get("qtyOwned")
     base["qty_owned"]   = 1 if qty is None else qty
-    base["set_number"]  = s.get("number")
+    raw_number = s.get("number") or ""
+    base["set_number"]  = raw_number.split("-", 1)[0]
     return base
 
 

@@ -38,10 +38,10 @@ def test_defaults_qty_owned_to_one():
 
 def test_uses_number_field_for_set_number():
     """Brickset's bare set number lives in the top-level 'number' field,
-    not in setNumber (which it doesn't expose)."""
+    not in setNumber (which it doesn't expose). The variant suffix is stripped."""
     raw = {"setID": 1, "number": "10298-1", "name": "X", "pieces": 1}
     r = _map_owned_set(raw)
-    assert r["set_number"] == "10298-1"
+    assert r["set_number"] == "10298"
 
 
 def test_extracts_list_price_from_legocom_de():
@@ -81,3 +81,44 @@ def test_list_price_is_none_when_retail_price_missing():
         "LEGOCom": {"DE": {"dateFirstAvailable": "2022-03-02T00:00:00Z"}},
     }
     assert _map_owned_set(raw)["list_price"] is None
+
+
+def test_variant_suffix_stripped_from_set_number():
+    """F4 — Brickset's '-1' variant suffix must not leak into set_number,
+    which the importer uses to match local rows entered as bare numbers."""
+    raw = {
+        "setID":   23456,
+        "number":  "10298-1",
+        "name":    "Vespa 125",
+        "pieces":  1106,
+        "theme":   "Creator Expert",
+        "year":    2022,
+        "image":   {"imageURL": None},
+        "LEGOCom": {"DE": {}},
+        "collection": {"qtyOwned": 1},
+    }
+    result = _map_owned_set(raw)
+    assert result["set_number"] == "10298"
+    # brickset_set_id stays numeric/internal (from setID); not affected.
+
+
+def test_set_number_without_suffix_passes_through():
+    """A bare number from Brickset (no -N variant) must not be mangled."""
+    raw = {
+        "setID": 9999, "number": "42171", "name": "x", "pieces": 1,
+        "theme": "t", "year": 2024,
+        "image": {"imageURL": None}, "LEGOCom": {"DE": {}},
+        "collection": {"qtyOwned": 1},
+    }
+    assert _map_owned_set(raw)["set_number"] == "42171"
+
+
+def test_set_number_empty_string_returns_empty_string():
+    """Defensive: an empty 'number' must not crash on split('-')."""
+    raw = {
+        "setID": 0, "number": "", "name": "", "pieces": 0,
+        "theme": None, "year": None,
+        "image": {"imageURL": None}, "LEGOCom": {"DE": {}},
+        "collection": {"qtyOwned": 0},
+    }
+    assert _map_owned_set(raw)["set_number"] == ""
