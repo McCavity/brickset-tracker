@@ -231,6 +231,25 @@ async function doLookup() {
   lucide.createIcons();
 
   applyPrefill(data.prefill || {});
+
+  if (data.status === 'rate_limit' || data.status === 'not_found' || data.status === 'error') {
+    showCallout(data.message, 'warn');
+  } else if (data.status === 'ean_unresolved') {
+    showCallout(data.message, 'info');
+  }
+}
+
+// ── Callout (mirrors add.html) ───────────────────────────────────────────
+function showCallout(msg, type) {
+  let el = document.getElementById('dynamic-callout');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'dynamic-callout';
+    document.getElementById('set-form').before(el);
+  }
+  const typeMap = { warn: 'Achtung', info: 'Hinweis', error: 'Fehler', ok: 'Klappt' };
+  el.className = `callout callout-${type}`;
+  el.innerHTML = `<span class="callout__mark">${typeMap[type] || 'Hinweis'}</span><p>${msg}</p>`;
 }
 
 // ── Pre-fill form ─────────────────────────────────────────────────────────
