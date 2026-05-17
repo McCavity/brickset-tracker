@@ -42,3 +42,42 @@ def test_uses_number_field_for_set_number():
     raw = {"setID": 1, "number": "10298-1", "name": "X", "pieces": 1}
     r = _map_owned_set(raw)
     assert r["set_number"] == "10298-1"
+
+
+def test_extracts_list_price_from_legocom_de():
+    """Brickset nests retail prices under LEGOCom.<country>.retailPrice.
+    For the German user, the EUR figure is LEGOCom.DE.retailPrice."""
+    raw = {
+        "setID": 23456, "number": "10298", "name": "Vespa 125",
+        "pieces": 1106, "theme": "Creator Expert", "year": 2022,
+        "barcode": {}, "image": {},
+        "LEGOCom": {
+            "US": {"retailPrice": 99.99},
+            "UK": {"retailPrice": 89.99},
+            "DE": {"retailPrice": 99.99, "dateFirstAvailable": "2022-03-02T00:00:00Z"},
+        },
+        "collection": {"qtyOwned": 1},
+    }
+    r = _map_owned_set(raw)
+    assert r["list_price"] == 99.99
+
+
+def test_list_price_is_none_when_legocom_missing():
+    raw = {"setID": 1, "number": "10298", "name": "X", "pieces": 1}
+    assert _map_owned_set(raw)["list_price"] is None
+
+
+def test_list_price_is_none_when_de_branch_missing():
+    raw = {
+        "setID": 1, "number": "10298", "name": "X", "pieces": 1,
+        "LEGOCom": {"US": {"retailPrice": 99.99}},  # only US, no DE
+    }
+    assert _map_owned_set(raw)["list_price"] is None
+
+
+def test_list_price_is_none_when_retail_price_missing():
+    raw = {
+        "setID": 1, "number": "10298", "name": "X", "pieces": 1,
+        "LEGOCom": {"DE": {"dateFirstAvailable": "2022-03-02T00:00:00Z"}},
+    }
+    assert _map_owned_set(raw)["list_price"] is None

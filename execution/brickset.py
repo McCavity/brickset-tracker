@@ -164,14 +164,16 @@ async def fetch_owned_collection() -> dict:
 def _map_set(s: dict) -> dict:
     barcode = s.get("barcode") or {}
     img     = s.get("image") or {}
+    lego_de = (s.get("LEGOCom") or {}).get("DE") or {}
     return {
-        "set_id":    s.get("setID"),
-        "name":      s.get("name"),
-        "pieces":    s.get("pieces"),
-        "theme":     s.get("theme"),
-        "year":      s.get("year"),
-        "ean":       barcode.get("EAN"),
-        "image_url": img.get("imageURL"),
+        "set_id":     s.get("setID"),
+        "name":       s.get("name"),
+        "pieces":     s.get("pieces"),
+        "theme":      s.get("theme"),
+        "year":       s.get("year"),
+        "ean":        barcode.get("EAN"),
+        "image_url":  img.get("imageURL"),
+        "list_price": lego_de.get("retailPrice"),
     }
 
 
