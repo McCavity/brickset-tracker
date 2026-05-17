@@ -3,16 +3,90 @@
 {% block header_title %}{{ t('settings.brand_slugs.title') }}{% endblock %}
 
 {% block content %}
-<h1>{{ t('settings.brand_slugs.title') }}</h1>
-<table>
+
+<div class="page-header">
+  <h1>{{ t('settings.brand_slugs.title') }}</h1>
+</div>
+
+<p class="settings-intro">{{ t('settings.brand_slugs.intro') }}</p>
+
+{# ── Error banner ────────────────────────────────────────────────── #}
+{% if error == "duplicate" %}
+<div class="callout callout-error">
+  <span class="callout__mark">×</span>
+  <p>{{ t('settings.brand_slugs.error_duplicate', brand=error_brand or '') }}</p>
+</div>
+{% elif error == "empty" %}
+<div class="callout callout-error">
+  <span class="callout__mark">×</span>
+  <p>{{ t('settings.brand_slugs.error_empty') }}</p>
+</div>
+{% endif %}
+
+{# ── Add form ────────────────────────────────────────────────────── #}
+<div class="settings-section">
+  <h2 class="settings-section__heading">{{ t('settings.brand_slugs.add_heading') }}</h2>
+  <form method="post" action="/settings/brand-slugs/add" class="brand-slug-add-form">
+    <div class="field">
+      <label for="add-brand">{{ t('settings.brand_slugs.col_brand') }}</label>
+      <input type="text" id="add-brand" name="brand" required>
+    </div>
+    <div class="field">
+      <label for="add-slug">{{ t('settings.brand_slugs.col_slug') }}</label>
+      <input type="text" id="add-slug" name="slug" required>
+    </div>
+    <button type="submit" class="btn btn-primary">
+      <i data-lucide="plus" style="width:15px;height:15px"></i>
+      {{ t('settings.brand_slugs.add_button') }}
+    </button>
+  </form>
+</div>
+
+{# ── List table ──────────────────────────────────────────────────── #}
+{% if pairs %}
+<table class="brand-slug-table">
   <thead>
-    <tr><th>{{ t('settings.brand_slugs.col_brand') }}</th>
-        <th>{{ t('settings.brand_slugs.col_slug') }}</th></tr>
+    <tr>
+      <th>{{ t('settings.brand_slugs.col_brand') }}</th>
+      <th>{{ t('settings.brand_slugs.col_slug') }}</th>
+      <th></th>
+    </tr>
   </thead>
   <tbody>
     {% for pair in pairs %}
-    <tr><td>{{ pair.brand }}</td><td>{{ pair.slug }}</td></tr>
+    <tr data-brand="{{ pair.brand }}">
+      <td class="brand-slug-table__brand">{{ pair.brand }}</td>
+      <td class="brand-slug-table__slug">
+        <span class="brand-slug-table__slug-display">{{ pair.slug }}</span>
+        <input type="text" class="brand-slug-table__slug-input hidden"
+               value="{{ pair.slug }}" data-original="{{ pair.slug }}">
+      </td>
+      <td class="brand-slug-table__actions">
+        <button type="button" class="btn btn-ghost btn-sm brand-slug-edit-btn"
+                title="{{ t('edit.title') }}">
+          <i data-lucide="pencil" style="width:13px;height:13px"></i>
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm brand-slug-save-btn hidden"
+                title="{{ t('settings.brand_slugs.save') }}">
+          <i data-lucide="check" style="width:13px;height:13px"></i>
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm brand-slug-cancel-btn hidden"
+                title="{{ t('settings.brand_slugs.cancel') }}">
+          <i data-lucide="x" style="width:13px;height:13px"></i>
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm brand-slug-delete-btn"
+                onclick="openDeleteModal('brand-slug:{{ pair.brand }}', '{{ pair.brand }}')">
+          <i data-lucide="trash-2" style="width:13px;height:13px"></i>
+        </button>
+      </td>
+    </tr>
     {% endfor %}
   </tbody>
 </table>
+{% else %}
+<div class="empty-state">
+  <h2>{{ t('settings.brand_slugs.empty') }}</h2>
+</div>
+{% endif %}
+
 {% endblock %}
