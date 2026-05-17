@@ -1058,4 +1058,33 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
   max-height: 90vh;
   object-fit: contain;
   box-shadow: var(--shadow-floating);
+  cursor: default;
 }
+
+/* Lightbox prev/next nav buttons — visible on the sides, vertically centered */
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--kartenpapier);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.lightbox-nav:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+.lightbox-nav svg {
+  width: 24px;
+  height: 24px;
+}
+.lightbox-nav--prev { left: var(--sp-5); }
+.lightbox-nav--next { right: var(--sp-5); }

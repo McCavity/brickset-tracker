@@ -190,7 +190,13 @@
 
 {# ── Lightbox overlay (hidden by default) ─────────────────────────── #}
 <div class="lightbox hidden" id="lightbox">
+  <button type="button" class="lightbox-nav lightbox-nav--prev" id="lightbox-prev" aria-label="Previous photo">
+    <i data-lucide="chevron-left"></i>
+  </button>
   <img id="lightbox-img" alt="">
+  <button type="button" class="lightbox-nav lightbox-nav--next" id="lightbox-next" aria-label="Next photo">
+    <i data-lucide="chevron-right"></i>
+  </button>
 </div>
 
 {% endblock %}
@@ -201,12 +207,20 @@
 (function () {
   const overlay = document.getElementById('lightbox');
   const overlayImg = document.getElementById('lightbox-img');
+  const btnPrev = document.getElementById('lightbox-prev');
+  const btnNext = document.getElementById('lightbox-next');
   if (!overlay || !overlayImg) return;
 
-  // Active list of img elements the user can cycle through with arrow keys.
+  // Active list of img elements the user can cycle through.
   // Set when the lightbox opens; cleared when it closes.
   let activeImages = [];
   let activeIndex = -1;
+
+  function updateNavVisibility() {
+    const multi = activeImages.length > 1;
+    if (btnPrev) btnPrev.style.display = multi ? '' : 'none';
+    if (btnNext) btnNext.style.display = multi ? '' : 'none';
+  }
 
   window.openLightbox = function (imgEl) {
     if (!imgEl) return;
@@ -217,6 +231,7 @@
     activeImages = group ? Array.from(group.querySelectorAll('img')) : [imgEl];
     activeIndex = Math.max(0, activeImages.indexOf(imgEl));
     overlayImg.src = imgEl.src;
+    updateNavVisibility();
     overlay.classList.remove('hidden');
   };
 
@@ -234,6 +249,12 @@
   }
 
   overlay.addEventListener('click', closeLightbox);
+  // Image clicks shouldn't close the lightbox (it'd feel like "click swallowed").
+  overlayImg.addEventListener('click', (e) => e.stopPropagation());
+  // Nav buttons step and stop propagation so they don't trigger the close handler.
+  if (btnPrev) btnPrev.addEventListener('click', (e) => { e.stopPropagation(); step(-1); });
+  if (btnNext) btnNext.addEventListener('click', (e) => { e.stopPropagation(); step(1); });
+
   document.addEventListener('keydown', (e) => {
     if (overlay.classList.contains('hidden')) return;
     if (e.key === 'Escape') closeLightbox();
