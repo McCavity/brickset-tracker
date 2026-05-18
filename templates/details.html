@@ -224,19 +224,31 @@
 
   window.openLightbox = function (imgEl) {
     if (!imgEl) return;
-    // Find the group: all images in the same .details-photo-thumbs group,
-    // or all images in .details-photos if the main image was clicked.
-    const group = imgEl.closest('.details-photo-thumbs')
-      || imgEl.closest('.details-photo-main');
-    activeImages = group ? Array.from(group.querySelectorAll('img')) : [imgEl];
-    activeIndex = Math.max(0, activeImages.indexOf(imgEl));
+    // Gather all photos from all thumbs groups on the page.
+    // The main image is always a duplicate of the first own (or web) thumb,
+    // so we don't include it separately to avoid double-counting.
+    const allThumbImgs = Array.from(document.querySelectorAll('.details-photo-thumbs img'));
+    if (allThumbImgs.length > 0) {
+      activeImages = allThumbImgs;
+      // Match by src: if the user clicked the main image, find the thumb
+      // with the same src to start at the right index.
+      const matchIndex = activeImages.findIndex(img => img.src === imgEl.src);
+      activeIndex = matchIndex >= 0 ? matchIndex : 0;
+    } else {
+      // Edge case: no thumbs rendered (e.g., main is a placeholder). Single-image mode.
+      activeImages = [imgEl];
+      activeIndex = 0;
+    }
     overlayImg.src = imgEl.src;
+    overlayImg.classList.toggle('multi', activeImages.length > 1);
     updateNavVisibility();
     overlay.classList.remove('hidden');
   };
 
   function closeLightbox() {
     overlay.classList.add('hidden');
+    overlayImg.classList.remove('multi');
+    overlayImg.style.cursor = '';
     overlayImg.src = '';
     activeImages = [];
     activeIndex = -1;
