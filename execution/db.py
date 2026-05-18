@@ -2,10 +2,12 @@
 Database initialisation and connection management.
 See architecture/SOP-008-database.md for schema and query patterns.
 """
+import os
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path("data/brickset.db")
+_DATA_DIR = Path(os.environ.get("BRICKSET_DATA_DIR", "data"))
+DB_PATH = _DATA_DIR / "brickset.db"
 
 
 def get_connection() -> sqlite3.Connection:

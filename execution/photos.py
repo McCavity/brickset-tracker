@@ -3,6 +3,7 @@ Photo upload, staging, and finalisation.
 See architecture/SOP-005-photo-upload.md.
 """
 import logging
+import os
 import shutil
 import time
 from pathlib import Path
@@ -12,8 +13,11 @@ log = logging.getLogger(__name__)
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".heic"}
 MAX_FILE_SIZE      = 20 * 1024 * 1024   # 20 MB
 STAGING_TTL        = 3600               # 1 hour in seconds
-STAGING_ROOT       = Path("uploads/staging")
-UPLOADS_ROOT       = Path("uploads")
+# When BRICKSET_DATA_DIR is set: $BRICKSET_DATA_DIR/uploads (and uploads/staging within).
+# When unset: ./uploads (current dev/LaunchAgent default — backward compatible).
+_DATA_DIR    = Path(os.environ.get("BRICKSET_DATA_DIR", "."))
+UPLOADS_ROOT = _DATA_DIR / "uploads"
+STAGING_ROOT = UPLOADS_ROOT / "staging"
 
 
 def upload_to_staging(file_bytes: bytes, filename: str, session_id: str) -> dict:
