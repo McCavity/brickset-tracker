@@ -94,6 +94,9 @@
           <a href="/sets/{{ s.id }}/edit" class="btn btn-ghost btn-sm" title="{{ t('edit.title') }}">
             <i data-lucide="pencil" style="width:13px;height:13px"></i>
           </a>
+          <a href="/add?clone_from={{ s.id }}" class="btn btn-ghost btn-sm" title="{{ t('actions.clone') }}">
+            <i data-lucide="copy" style="width:13px;height:13px"></i>
+          </a>
           <button class="btn btn-ghost btn-sm"
                   onclick="openDeleteModal({{ s.id }}, '{{ s.name | replace("'", "\\'") }}')">
             <i data-lucide="trash-2" style="width:13px;height:13px"></i>

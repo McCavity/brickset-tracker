@@ -5,6 +5,9 @@
     "settings":        "Einstellungen",
     "import_brickset": "Aus Brickset importieren"
   },
+  "actions": {
+    "clone": "Duplizieren"
+  },
   "add": {
     "title":           "Neues Set hinzufügen",
     "scan_ean":        "EAN scannen / eingeben",
