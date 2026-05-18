@@ -104,7 +104,34 @@ cmd_install() {
   exit 1
 }
 
+cmd_uninstall() {
+  if launchctl list "${LABEL}" >/dev/null 2>&1; then
+    launchctl unload "${PLIST}" 2>/dev/null || true
+  fi
+  rm -f "${PLIST}"
+  echo "✓ LaunchAgent uninstalled. (Log file preserved at ${LOG}.)"
+}
+
+cmd_status() {
+  if ! launchctl list "${LABEL}" >/dev/null 2>&1; then
+    echo "LaunchAgent not loaded. Install with: $0 install"
+    exit 1
+  fi
+  launchctl list "${LABEL}"
+  echo ""
+  local port
+  port="$(read_port_from_env)"
+  if curl -fsS -o /dev/null -w "HTTP %{http_code} on http://localhost:${port}/\n" "http://localhost:${port}/"; then
+    echo "✓ Server is responding"
+  else
+    echo "✗ Server is NOT responding"
+    exit 1
+  fi
+}
+
 case "${1:-}" in
-  install) cmd_install ;;
+  install)   cmd_install ;;
+  uninstall) cmd_uninstall ;;
+  status)    cmd_status ;;
   *) echo "Usage: $0 {install|uninstall|status}"; exit 2 ;;
 esac
