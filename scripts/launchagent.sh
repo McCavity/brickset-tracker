@@ -50,9 +50,10 @@ cmd_install() {
   # Load
   launchctl load -w "${PLIST}"
 
-  # Smoke check: poll for up to 5s (one probe per second)
+  # Smoke check: poll for up to 15s (one probe per second). FastAPI cold-start
+  # with the brickset-tracker import graph can take ~8–12s on a slow disk.
   local i
-  for i in 1 2 3 4 5; do
+  for i in $(seq 1 15); do
     if curl -fsS "http://localhost:${port}/" >/dev/null 2>&1; then
       echo "✓ LaunchAgent installed and responding on http://localhost:${port}/"
       echo "  Logs:  ${LOG}"
@@ -61,8 +62,8 @@ cmd_install() {
     fi
     sleep 1
   done
-  echo "ERROR: LaunchAgent loaded but server did not respond on port ${port} within 5s."
-  echo "Check logs: tail -50 ${LOG}"
+  echo "ERROR: LaunchAgent loaded but server did not respond on port ${port} within 15s."
+  echo "The agent is likely loaded — check 'launchctl list ${LABEL}' and tail -50 ${LOG}"
   exit 1
 }
 
