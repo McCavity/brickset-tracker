@@ -124,9 +124,29 @@ async def api_filter(
 
 
 @app.get("/add", response_class=HTMLResponse)
-async def add_page(request: Request):
+async def add_page(request: Request, clone_from: int | None = None):
+    prefill: dict = {}
+    if clone_from is not None:
+        source = get_set(clone_from)
+        if source is not None:
+            # Clone IDENTITY fields only — leave instance fields blank
+            # so the user records a separate purchase/build.
+            prefill = {
+                "brand":           source.get("brand"),
+                "set_number":      source.get("set_number"),
+                "name":            source.get("name"),
+                "part_count":      source.get("part_count"),
+                "theme":           source.get("theme"),
+                "release_year":    source.get("release_year"),
+                "ean":             source.get("ean"),
+                "brickset_set_id": source.get("brickset_set_id"),
+                "web_images":      source.get("web_images") or [],
+                "minifigs":        source.get("minifigs"),
+            }
+        # If clone_from is provided but the source doesn't exist, fall back
+        # to a blank /add page silently. Not worth a 404 for a malformed link.
     return templates.TemplateResponse(request, "add.html", context=_ctx(
-        request, prefill={}, callout=None, conditions=CONDITION_VALUES,
+        request, prefill=prefill, callout=None, conditions=CONDITION_VALUES,
         brands=get_brands(), today=date.today().isoformat(),
     ))
 
