@@ -370,6 +370,52 @@ async def settings_brand_slugs_delete(brand: str):
 
 # ── API ────────────────────────────────────────────────────────────────────
 
+@app.get("/api/export/json")
+async def api_export_json():
+    """Full collection as JSON. Backup-friendly: nested fields stay as arrays."""
+    import json
+    rows = get_sets()  # No filters → full collection.
+    body = json.dumps(rows, indent=2, ensure_ascii=False, default=str).encode("utf-8")
+    filename = f"brickset-tracker-{date.today().isoformat()}.json"
+    return Response(
+        content=body,
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/api/export/csv")
+async def api_export_csv():
+    """Full collection as CSV. Spreadsheet-friendly: nested fields pipe-joined.
+    Includes a UTF-8 BOM so Excel/Numbers detect the encoding correctly."""
+    import csv
+    import io
+
+    rows = get_sets()
+    columns = [
+        "id", "brand", "set_number", "name", "part_count",
+        "theme", "release_year", "ean", "brickset_set_id",
+        "condition", "location", "date_of_purchase",
+        "price_paid", "list_price", "minifigs", "note",
+        "status", "created_at",
+        "web_images", "own_photos",
+    ]
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=columns, extrasaction="ignore")
+    writer.writeheader()
+    for row in rows:
+        out = dict(row)
+        out["web_images"] = "|".join(row.get("web_images") or [])
+        out["own_photos"] = "|".join(row.get("own_photos") or [])
+        writer.writerow(out)
+    filename = f"brickset-tracker-{date.today().isoformat()}.csv"
+    return Response(
+        content=buf.getvalue().encode("utf-8-sig"),  # BOM for Excel
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @app.post("/api/lookup")
 async def api_lookup(
     ean: str | None        = Form(None),
