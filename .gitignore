@@ -9,6 +9,7 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+venv*/
 *.egg-info/
 .DS_Store
 docs/superpowers/specs/*.draft.md

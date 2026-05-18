@@ -54,7 +54,7 @@ A local-first SQLite-backed collection manager for LEGO and other brick brands, 
 ## Quick start
 
 ```bash
-git clone https://github.com/<your-username>/brickset-tracker.git
+git clone https://github.com/McCavity/brickset-tracker.git
 cd brickset-tracker
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
