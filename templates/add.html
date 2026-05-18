@@ -47,7 +47,7 @@
 {# ── Main form ────────────────────────────────────────────────────── #}
 <form id="set-form" onsubmit="submitSet(event)">
   <input type="hidden" id="session-id" name="session_id" value="{{ session_id or '' }}">
-  <input type="hidden" id="web-images-json" name="web_images_json" value="{{ prefill.web_images | tojson if prefill.web_images else '[]' }}">
+  <input type="hidden" id="web-images-json" name="web_images_json" value="{{ (prefill.web_images | tojson if prefill.web_images else '[]') | forceescape }}">
   <input type="hidden" id="brickset-set-id" name="brickset_set_id" value="{{ prefill.brickset_set_id or '' }}">
 
   <div class="form-grid">

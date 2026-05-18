@@ -86,3 +86,56 @@ def test_clone_from_invalid_id_falls_back_to_blank_add(db):
     # Blank add page: no value="LEGO" or other pre-filled identity field.
     # (Brand is empty by default — the input has value="" or no value attribute.)
     assert "Vespa" not in r.text
+
+
+def test_clone_html_escapes_web_images_json(db):
+    """The web_images_json hidden input must HTML-escape its JSON value so the
+    surrounding value="..." attribute doesn't terminate early on inner quotes.
+
+    Regression: before the fix, the rendered HTML looked like
+        value="["https://example.com/a.jpg"]"
+    which the browser parses as value="["  with the rest as garbage attributes,
+    so JSON.parse(input.value) throws "Unexpected end of input" and /api/sets
+    POST submits a malformed payload that 500s on the server. End result: the
+    cloned set couldn't be saved.
+    """
+    from main import app
+
+    source = make_set(brand="LEGO", set_number="10298", name="Vespa", part_count=1106)
+    _set_extra_fields(source, web_images=json.dumps([
+        "https://example.com/a.jpg",
+        "https://example.com/b.jpg",
+    ]))
+
+    with TestClient(app) as client:
+        r = client.get(f"/add?clone_from={source}")
+
+    assert r.status_code == 200
+    html = r.text
+    # The hidden input's value attribute must contain HTML-escaped quotes
+    # (&quot; or the numeric equivalent &#34;) — never raw `"` from the JSON output.
+    # Find the full input element via a substring search.
+    idx = html.find('id="web-images-json"')
+    assert idx != -1, "web-images-json input must be present"
+    # Slice forward to the closing > of that tag.
+    tag_end = html.index('>', idx)
+    input_html = html[idx:tag_end + 1]
+    # Some escaped form must be present (Jinja uses numeric &#34; by default).
+    assert '&quot;' in input_html or '&#34;' in input_html, (
+        f"JSON quotes must be HTML-escaped; got: {input_html!r}"
+    )
+    # The raw form (a literal `"` adjacent to the URL) must NOT appear
+    # inside the value="..." attribute.
+    assert '"https://example.com' not in input_html, (
+        f"Raw double-quote next to URL would break attribute parsing; got: {input_html!r}"
+    )
+    # Round-trip check: decode the value back and ensure it parses as JSON.
+    import re, html as html_lib
+    match = re.search(r'value="([^"]*)"', input_html)
+    assert match, f"could not locate value=... in {input_html!r}"
+    decoded = html_lib.unescape(match.group(1))
+    parsed = json.loads(decoded)
+    assert parsed == [
+        "https://example.com/a.jpg",
+        "https://example.com/b.jpg",
+    ]
