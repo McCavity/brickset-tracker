@@ -2,11 +2,15 @@
 Daily quota tracking for external services.
 See architecture/SOP-006-rate-limit.md.
 """
+import os
 from datetime import date
 from execution.db import get_connection
 
+# `merlinssteine` is configurable via MERLINSSTEINE_DAILY_LIMIT (default 10) so
+# the user can tighten the scrape budget without code changes. `brickset` and
+# `upcitemdb` use vendor-published limits and stay hardcoded.
 LIMITS: dict[str, int] = {
-    "merlinssteine": 10,
+    "merlinssteine": int(os.getenv("MERLINSSTEINE_DAILY_LIMIT", "10")),
     "brickset": 100,
     "upcitemdb": 100,
 }
