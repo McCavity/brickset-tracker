@@ -94,3 +94,57 @@ def test_export_csv_serialises_nested_fields_as_pipes(db):
     rows = list(reader)
     target = next(row for row in rows if int(row["id"]) == set_id)
     assert target["web_images"] == "http://example.com/a.jpg|http://example.com/b.jpg"
+
+
+def test_export_csv_normalizes_newlines_in_string_cells(db):
+    """Multi-line notes (e.g. from the Brickset import) get a `\\n` baked in.
+    Excel's Text-to-Columns treats `\\n` as a row terminator regardless of
+    quoting — so the export must replace `\\n` with a non-newline separator
+    before writing the CSV."""
+    from main import app
+
+    set_id = make_set(
+        brand="LEGO", set_number="10298", name="Vespa", part_count=1106,
+        note="Imported from Brickset on 2026-05-17\nGebaut als Pfau",
+    )
+
+    with TestClient(app) as client:
+        r = client.get("/api/export/csv")
+
+    text = r.content.decode("utf-8-sig")
+
+    # The note cell should contain the middot separator, NOT a literal newline.
+    # Find the row containing our seeded note.
+    reader = csv.DictReader(io.StringIO(text))
+    rows = list(reader)
+    target = next(row for row in rows if int(row["id"]) == set_id)
+    assert "\n" not in target["note"], (
+        f"note cell still contains a newline: {target['note']!r}"
+    )
+    assert "·" in target["note"], (
+        f"note cell should contain the middot separator: {target['note']!r}"
+    )
+    # Round-trip: content (modulo the separator swap) should otherwise survive.
+    assert "Imported from Brickset" in target["note"]
+    assert "Gebaut als Pfau" in target["note"]
+
+
+def test_export_csv_uses_quote_all(db):
+    """QUOTE_ALL means every cell — even numeric ids — is wrapped in quotes.
+    This is defensive against tools that misinterpret unquoted cells."""
+    from main import app
+
+    make_set(brand="LEGO", set_number="10298", name="Vespa", part_count=1106)
+
+    with TestClient(app) as client:
+        r = client.get("/api/export/csv")
+
+    text = r.content.decode("utf-8-sig")
+    # The header row must be all-quoted: every column name inside "..." pairs.
+    header_line = text.splitlines()[0]
+    # Every comma-separated field must start and end with ".
+    fields = header_line.split(",")
+    for field in fields:
+        assert field.startswith('"') and field.endswith('"'), (
+            f"Field not quoted under QUOTE_ALL: {field!r}"
+        )

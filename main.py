@@ -387,9 +387,20 @@ async def api_export_json():
 @app.get("/api/export/csv")
 async def api_export_csv():
     """Full collection as CSV. Spreadsheet-friendly: nested fields pipe-joined.
-    Includes a UTF-8 BOM so Excel/Numbers detect the encoding correctly."""
+    Includes a UTF-8 BOM so Excel/Numbers detect the encoding correctly.
+
+    Newlines inside string cells (e.g. multi-line notes) are normalised to
+    a middot separator " · " so Excel's Text-to-Columns wizard doesn't
+    treat them as row terminators (a known Excel quirk independent of
+    quoting). QUOTE_ALL adds defensive quoting on every cell."""
     import csv
     import io
+
+    def _flatten(value):
+        """Strip newlines from string cells. Other types pass through."""
+        if isinstance(value, str):
+            return value.replace("\r\n", " · ").replace("\n", " · ").replace("\r", " · ")
+        return value
 
     rows = get_sets()
     columns = [
@@ -401,10 +412,11 @@ async def api_export_csv():
         "web_images", "own_photos",
     ]
     buf = io.StringIO()
-    writer = csv.DictWriter(buf, fieldnames=columns, extrasaction="ignore")
+    writer = csv.DictWriter(buf, fieldnames=columns, extrasaction="ignore",
+                            quoting=csv.QUOTE_ALL)
     writer.writeheader()
     for row in rows:
-        out = dict(row)
+        out = {k: _flatten(v) for k, v in dict(row).items()}
         out["web_images"] = "|".join(row.get("web_images") or [])
         out["own_photos"] = "|".join(row.get("own_photos") or [])
         writer.writerow(out)
