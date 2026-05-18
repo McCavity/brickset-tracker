@@ -262,7 +262,25 @@
 
   overlay.addEventListener('click', closeLightbox);
   // Image clicks shouldn't close the lightbox (it'd feel like "click swallowed").
-  overlayImg.addEventListener('click', (e) => e.stopPropagation());
+  // On-image click zones: left half → prev, right half → next.
+  // stopPropagation prevents the backdrop's close handler from firing.
+  overlayImg.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (activeImages.length < 2) return;
+    const halfway = overlayImg.getBoundingClientRect().width / 2;
+    if (e.offsetX < halfway) step(-1);
+    else step(+1);
+  });
+  // Cursor swap: w-resize over the left half, e-resize over the right half.
+  // CSS can't split cursors across one element, so this is JS-driven.
+  overlayImg.addEventListener('mousemove', (e) => {
+    if (activeImages.length < 2) {
+      overlayImg.style.cursor = '';
+      return;
+    }
+    const halfway = overlayImg.getBoundingClientRect().width / 2;
+    overlayImg.style.cursor = e.offsetX < halfway ? 'w-resize' : 'e-resize';
+  });
   // Nav buttons step and stop propagation so they don't trigger the close handler.
   if (btnPrev) btnPrev.addEventListener('click', (e) => { e.stopPropagation(); step(-1); });
   if (btnNext) btnNext.addEventListener('click', (e) => { e.stopPropagation(); step(1); });

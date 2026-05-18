@@ -1061,6 +1061,12 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
   cursor: default;
 }
 
+/* Multi-image lightbox: cursor swap is JS-driven via mousemove.
+   This class only gives a pointer fallback before the first mousemove fires. */
+.lightbox img.multi {
+  cursor: pointer;
+}
+
 /* Lightbox prev/next nav buttons — visible on the sides, vertically centered */
 .lightbox-nav {
   position: absolute;
