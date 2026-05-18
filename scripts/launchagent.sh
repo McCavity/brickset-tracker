@@ -15,6 +15,31 @@ read_port_from_env() {
   echo "${p:-8000}"
 }
 
+find_free_port() {
+  # Scan from $1 upward for up to 100 ports; echo first free, return 1 if none.
+  local start="$1"
+  local max=$((start + 99))
+  local p
+  for ((p=start; p<=max; p++)); do
+    if ! nc -z -G 1 127.0.0.1 "${p}" >/dev/null 2>&1; then
+      echo "${p}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+write_port_to_env() {
+  local port="$1"
+  local env="${PROJECT_ROOT}/.env"
+  if grep -qE '^PORT=' "${env}" 2>/dev/null; then
+    # BSD sed: -i needs '' for in-place with no backup
+    sed -i '' -E "s|^PORT=.*|PORT=${port}|" "${env}"
+  else
+    printf '\nPORT=%s\n' "${port}" >> "${env}"
+  fi
+}
+
 cmd_install() {
   # Pre-flight: venv must exist
   if [[ ! -x "${PROJECT_ROOT}/.venv/bin/uvicorn" ]]; then
@@ -28,8 +53,20 @@ cmd_install() {
     launchctl unload "${PLIST}" 2>/dev/null || true
   fi
 
+  local start_port
+  start_port="$(read_port_from_env)"
+
   local port
-  port="$(read_port_from_env)"
+  if ! port="$(find_free_port "${start_port}")"; then
+    echo "ERROR: no free port in ${start_port}..$((start_port + 99))."
+    echo "Check what's bound: lsof -nP -iTCP -sTCP:LISTEN | grep 80"
+    exit 1
+  fi
+
+  if [[ "${port}" != "${start_port}" ]]; then
+    echo "Port ${start_port} busy — using ${port} instead."
+  fi
+  write_port_to_env "${port}"
 
   # Render template
   sed -e "s|__PROJECT_ROOT__|${PROJECT_ROOT}|g" \
