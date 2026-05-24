@@ -2,13 +2,21 @@
 Brickset Tracker — FastAPI application.
 Start: uvicorn main:app --reload --port 8000
 """
+import hashlib
 import re
 from contextlib import asynccontextmanager
 from datetime import date
+from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import FastAPI, Form, Query, Request, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -528,20 +536,75 @@ async def api_quota():
     return JSONResponse(get_quota_status())
 
 
+# Image-Cache for /api/proxy-image.
+# - On a hit, serve from disk (fast, no external fetch).
+# - On a miss, fetch + save to cache.
+# - On any error (404, network, timeout, exception), fall back to the
+#   no-image placeholder so the browser always gets a usable 200.
+_PROXY_CACHE_DIR = Path("uploads/cached")
+_PROXY_PLACEHOLDER = Path("static/no-image-placeholder.png")
+_PROXY_EXT_BY_MIME = {
+    "image/webp": ".webp",
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/avif": ".avif",
+}
+_PROXY_KNOWN_EXTS = (".webp", ".jpg", ".jpeg", ".png", ".gif", ".avif")
+
+
+def _proxy_cache_key(url: str) -> str:
+    """SHA-256 of the URL, first 16 hex chars — collision-safe for hobby scale."""
+    return hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
+
+
+def _proxy_cache_lookup(key: str) -> Path | None:
+    """Return existing cached file for the key, or None."""
+    for ext in _PROXY_KNOWN_EXTS:
+        p = _PROXY_CACHE_DIR / f"{key}{ext}"
+        if p.exists():
+            return p
+    return None
+
+
 @app.get("/api/proxy-image")
 async def api_proxy_image(url: str):
     import httpx
+
+    _PROXY_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    key = _proxy_cache_key(url)
+
+    # Cache hit — serve straight from disk.
+    cached = _proxy_cache_lookup(key)
+    if cached is not None:
+        return FileResponse(cached)
+
+    # Cache miss — fetch upstream, fall back to placeholder on any failure.
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
             r = await client.get(url, headers={
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
                 "Referer": "https://www.merlinssteine.de/",
             })
-        if r.status_code != 200:
-            return JSONResponse({"error": "not found"}, status_code=404)
-        return Response(content=r.content, media_type=r.headers.get("content-type", "image/webp"))
     except Exception:
-        return JSONResponse({"error": "fetch failed"}, status_code=404)
+        return FileResponse(_PROXY_PLACEHOLDER)
+
+    if r.status_code != 200:
+        return FileResponse(_PROXY_PLACEHOLDER)
+
+    content_type = r.headers.get("content-type", "image/webp").split(";")[0].strip().lower()
+    ext = _PROXY_EXT_BY_MIME.get(content_type, ".bin")
+
+    # Persist to cache for next time.
+    cache_path = _PROXY_CACHE_DIR / f"{key}{ext}"
+    try:
+        cache_path.write_bytes(r.content)
+    except OSError:
+        # Cache write failed (disk full, perms) — still serve the bytes inline.
+        pass
+
+    return Response(content=r.content, media_type=content_type)
 
 
 @app.post("/set-lang")
