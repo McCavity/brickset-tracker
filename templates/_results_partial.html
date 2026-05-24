@@ -38,10 +38,7 @@
         {% if thumb %}
           <img src="{{ thumb }}" alt="" loading="lazy">
         {% else %}
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="20" cy="21" r="6"/><circle cx="36" cy="21" r="6"/>
-            <rect x="10" y="27" width="36" height="16" rx="3"/>
-          </svg>
+          <img src="/static/no-image-placeholder.png" alt="Kein Bild verfügbar" loading="lazy">
         {% endif %}
       </div>
 
@@ -93,6 +90,9 @@
           {% endif %}
           <a href="/sets/{{ s.id }}/edit" class="btn btn-ghost btn-sm" title="{{ t('edit.title') }}">
             <i data-lucide="pencil" style="width:13px;height:13px"></i>
+          </a>
+          <a href="/add?clone_from={{ s.id }}" class="btn btn-ghost btn-sm" title="{{ t('actions.clone') }}">
+            <i data-lucide="copy" style="width:13px;height:13px"></i>
           </a>
           <button class="btn btn-ghost btn-sm"
                   onclick="openDeleteModal({{ s.id }}, '{{ s.name | replace("'", "\\'") }}')">

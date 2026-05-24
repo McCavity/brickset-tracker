@@ -47,7 +47,7 @@
 {# ── Main form ────────────────────────────────────────────────────── #}
 <form id="set-form" onsubmit="submitSet(event)">
   <input type="hidden" id="session-id" name="session_id" value="{{ session_id or '' }}">
-  <input type="hidden" id="web-images-json" name="web_images_json" value="{{ prefill.web_images | tojson if prefill.web_images else '[]' }}">
+  <input type="hidden" id="web-images-json" name="web_images_json" value="{{ (prefill.web_images | tojson if prefill.web_images else '[]') | forceescape }}">
   <input type="hidden" id="brickset-set-id" name="brickset_set_id" value="{{ prefill.brickset_set_id or '' }}">
 
   <div class="form-grid">
@@ -307,6 +307,16 @@ function renderWebImages(urls) {
     wrap.appendChild(img);
   });
 }
+
+// On page load: if web_images is pre-populated (e.g. via ?clone_from=...),
+// render the thumbnails so the user can see what was carried over. Mirrors
+// the same-named IIFE in edit.html lines 202-206.
+(function () {
+  try {
+    const urls = JSON.parse(document.getElementById('web-images-json').value || '[]');
+    if (urls.length) renderWebImages(urls);
+  } catch (e) { /* malformed JSON: skip rendering, the save flow won't break */ }
+})();
 
 // ── Callout ──────────────────────────────────────────────────────────────
 function showCallout(msg, type) {

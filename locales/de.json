@@ -5,6 +5,9 @@
     "settings":        "Einstellungen",
     "import_brickset": "Aus Brickset importieren"
   },
+  "actions": {
+    "clone": "Duplizieren"
+  },
   "add": {
     "title":           "Neues Set hinzufügen",
     "scan_ean":        "EAN scannen / eingeben",
@@ -76,7 +79,9 @@
     "status_complete":    "Vollständig",
     "status_draft":       "Entwurf",
     "results_count":      "{shown} von {total} Sets",
-    "no_matches":         "Keine Sets entsprechen diesen Filtern"
+    "no_matches":         "Keine Sets entsprechen diesen Filtern",
+    "export_csv":         "Als CSV",
+    "export_json":        "Als JSON"
   },
   "details": {
     "back":                 "← Zurück zur Sammlung",

@@ -27,6 +27,14 @@
       {{ t('nav.import_brickset') }}
     </a>
     {% endif %}
+    <a href="/api/export/csv" class="btn btn-ghost" download>
+      <i data-lucide="file-down" style="width:15px;height:15px"></i>
+      {{ t('list.export_csv') }}
+    </a>
+    <a href="/api/export/json" class="btn btn-ghost" download>
+      <i data-lucide="file-down" style="width:15px;height:15px"></i>
+      {{ t('list.export_json') }}
+    </a>
     <a href="/add" class="btn btn-primary">
       <i data-lucide="plus" style="width:15px;height:15px"></i>
       {{ t('add.title') }}

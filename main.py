@@ -124,9 +124,29 @@ async def api_filter(
 
 
 @app.get("/add", response_class=HTMLResponse)
-async def add_page(request: Request):
+async def add_page(request: Request, clone_from: int | None = None):
+    prefill: dict = {}
+    if clone_from is not None:
+        source = get_set(clone_from)
+        if source is not None:
+            # Clone IDENTITY fields only — leave instance fields blank
+            # so the user records a separate purchase/build.
+            prefill = {
+                "brand":           source.get("brand"),
+                "set_number":      source.get("set_number"),
+                "name":            source.get("name"),
+                "part_count":      source.get("part_count"),
+                "theme":           source.get("theme"),
+                "release_year":    source.get("release_year"),
+                "ean":             source.get("ean"),
+                "brickset_set_id": source.get("brickset_set_id"),
+                "web_images":      source.get("web_images") or [],
+                "minifigs":        source.get("minifigs"),
+            }
+        # If clone_from is provided but the source doesn't exist, fall back
+        # to a blank /add page silently. Not worth a 404 for a malformed link.
     return templates.TemplateResponse(request, "add.html", context=_ctx(
-        request, prefill={}, callout=None, conditions=CONDITION_VALUES,
+        request, prefill=prefill, callout=None, conditions=CONDITION_VALUES,
         brands=get_brands(), today=date.today().isoformat(),
     ))
 
@@ -349,6 +369,64 @@ async def settings_brand_slugs_delete(brand: str):
 
 
 # ── API ────────────────────────────────────────────────────────────────────
+
+@app.get("/api/export/json")
+async def api_export_json():
+    """Full collection as JSON. Backup-friendly: nested fields stay as arrays."""
+    import json
+    rows = get_sets()  # No filters → full collection.
+    body = json.dumps(rows, indent=2, ensure_ascii=False, default=str).encode("utf-8")
+    filename = f"brickset-tracker-{date.today().isoformat()}.json"
+    return Response(
+        content=body,
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/api/export/csv")
+async def api_export_csv():
+    """Full collection as CSV. Spreadsheet-friendly: nested fields pipe-joined.
+    Includes a UTF-8 BOM so Excel/Numbers detect the encoding correctly.
+
+    Newlines inside string cells (e.g. multi-line notes) are normalised to
+    a middot separator " · " so Excel's Text-to-Columns wizard doesn't
+    treat them as row terminators (a known Excel quirk independent of
+    quoting). QUOTE_ALL adds defensive quoting on every cell."""
+    import csv
+    import io
+
+    def _flatten(value):
+        """Strip newlines from string cells. Other types pass through."""
+        if isinstance(value, str):
+            return value.replace("\r\n", " · ").replace("\n", " · ").replace("\r", " · ")
+        return value
+
+    rows = get_sets()
+    columns = [
+        "id", "brand", "set_number", "name", "part_count",
+        "theme", "release_year", "ean", "brickset_set_id",
+        "condition", "location", "date_of_purchase",
+        "price_paid", "list_price", "minifigs", "note",
+        "status", "created_at",
+        "web_images", "own_photos",
+    ]
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=columns, extrasaction="ignore",
+                            quoting=csv.QUOTE_ALL)
+    writer.writeheader()
+    for row in rows:
+        out = {k: _flatten(v) for k, v in dict(row).items()}
+        out["web_images"] = "|".join(row.get("web_images") or [])
+        out["own_photos"] = "|".join(row.get("own_photos") or [])
+        writer.writerow(out)
+    filename = f"brickset-tracker-{date.today().isoformat()}.csv"
+    return Response(
+        content=buf.getvalue().encode("utf-8-sig"),  # BOM for Excel
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
 
 @app.post("/api/lookup")
 async def api_lookup(
