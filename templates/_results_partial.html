@@ -6,13 +6,32 @@
     (active_filters.status | length) %}
 {% set filters_active = (q | length > 0) or (total_active_filters > 0) %}
 
-<div id="results-region" data-total="{{ total }}" data-shown="{{ sets | length }}">
+<div id="results-region"
+     data-total="{{ total }}"
+     data-shown="{{ sets | length }}"
+     data-filtered-total="{{ filtered_total }}"
+     data-page="{{ page }}"
+     data-size="{{ size }}"
+     data-page-count="{{ page_count }}">
 
-  {% if filters_active and sets %}
-  <p class="results-count">
-    <i data-lucide="filter" style="width:13px;height:13px;vertical-align:-2px"></i>
-    {{ t('list.results_count', shown=sets|length, total=total) }}
-  </p>
+  {% if filtered_total > 0 %}
+  <div class="pagination-bar">
+    <p class="results-count">
+      {% if filters_active %}
+        <i data-lucide="filter" style="width:13px;height:13px;vertical-align:-2px"></i>
+      {% endif %}
+      {{ t('list.pagination_summary', start=start+1, end=end, filtered=filtered_total) }}{% if filtered_total != total %} <span class="text-muted">{{ t('list.pagination_of_total', total=total) }}</span>{% endif %}
+    </p>
+    <div class="pagination-size">
+      <span class="pagination-size__label">{{ t('list.page_size_label') }}</span>
+      {% for opt in allowed_page_sizes %}
+        <a class="pagination-size__opt{% if opt == size %} pagination-size__opt--active{% endif %}"
+           href="/?{% if base_query %}{{ base_query }}&amp;{% endif %}size={{ opt }}&amp;page=1">
+          {{ t('list.page_size_all') if opt == 0 else opt }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
   {% endif %}
 
   {% if sets %}
@@ -104,6 +123,34 @@
     </div>
     {% endfor %}
   </div>
+
+  {% if page_count > 1 %}
+  <nav class="pagination-nav" aria-label="{{ t('list.pagination_aria') }}">
+    {% if page > 1 %}
+      <a class="pagination-nav__btn" href="/?{% if base_query %}{{ base_query }}&amp;{% endif %}size={{ size }}&amp;page={{ page - 1 }}" rel="prev">
+        <i data-lucide="chevron-left" style="width:14px;height:14px"></i>
+        {{ t('list.page_prev') }}
+      </a>
+    {% else %}
+      <span class="pagination-nav__btn pagination-nav__btn--disabled" aria-disabled="true">
+        <i data-lucide="chevron-left" style="width:14px;height:14px"></i>
+        {{ t('list.page_prev') }}
+      </span>
+    {% endif %}
+    <span class="pagination-nav__page">{{ t('list.page_x_of_y', page=page, page_count=page_count) }}</span>
+    {% if page < page_count %}
+      <a class="pagination-nav__btn" href="/?{% if base_query %}{{ base_query }}&amp;{% endif %}size={{ size }}&amp;page={{ page + 1 }}" rel="next">
+        {{ t('list.page_next') }}
+        <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
+      </a>
+    {% else %}
+      <span class="pagination-nav__btn pagination-nav__btn--disabled" aria-disabled="true">
+        {{ t('list.page_next') }}
+        <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
+      </span>
+    {% endif %}
+  </nav>
+  {% endif %}
 
   {% elif filters_active %}
 
