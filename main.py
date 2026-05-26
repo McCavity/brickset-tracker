@@ -7,7 +7,7 @@ import re
 from contextlib import asynccontextmanager
 from datetime import date
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from fastapi import FastAPI, Form, Query, Request, UploadFile, File
 from fastapi.responses import (
@@ -34,6 +34,66 @@ from execution.brickset import sync_owned
 
 # Module-level validation
 SESSION_ID_RE = re.compile(r"[a-fA-F0-9-]{8,64}")
+
+# Pagination
+ALLOWED_PAGE_SIZES = (10, 25, 50, 100, 0)   # 0 = "all"
+DEFAULT_PAGE_SIZE = 25
+
+
+def _paginate(items: list, page: int, size: int) -> dict:
+    """Clamp page/size against allowed values and slice items.
+
+    Returns dict with: sets, page, size, page_count, start, end, filtered_total.
+    `start` / `end` are 0-based half-open (so display as `start+1` to `end`).
+    """
+    if size not in ALLOWED_PAGE_SIZES:
+        size = DEFAULT_PAGE_SIZE
+    filtered_total = len(items)
+    if size <= 0:
+        return {
+            "sets": items,
+            "page": 1, "size": 0, "page_count": 1,
+            "start": 0, "end": filtered_total,
+            "filtered_total": filtered_total,
+        }
+    page_count = max(1, (filtered_total + size - 1) // size)
+    page = max(1, min(page, page_count))
+    start = (page - 1) * size
+    end = min(start + size, filtered_total)
+    return {
+        "sets": items[start:end],
+        "page": page, "size": size, "page_count": page_count,
+        "start": start, "end": end,
+        "filtered_total": filtered_total,
+    }
+
+
+def _pagination_base_query(
+    q: str | None, sort: str, dir: str,
+    brand: list[str], condition: list[str],
+    theme: list[str], status: list[str],
+) -> str:
+    """Build the query string carrying all filter/sort state — WITHOUT page/size.
+
+    Templates append `&page=N` / `&size=N` to navigate.
+    Returns an already URL-encoded string (no leading '?').
+    """
+    parts: list[tuple[str, str]] = []
+    if q:
+        parts.append(("q", q))
+    if sort and sort != "date_of_purchase":
+        parts.append(("sort", sort))
+    if dir and dir != "DESC":
+        parts.append(("dir", dir))
+    for b in brand:
+        parts.append(("brand", b))
+    for c in condition:
+        parts.append(("condition", c))
+    for tval in theme:
+        parts.append(("theme", tval))
+    for s in status:
+        parts.append(("status", s))
+    return urlencode(parts)
 
 
 @asynccontextmanager
@@ -74,13 +134,15 @@ async def index(
     condition: list[str] = Query(default_factory=list),
     theme: list[str] = Query(default_factory=list),
     status: list[str] = Query(default_factory=list),
+    page: int = 1,
+    size: int = DEFAULT_PAGE_SIZE,
     imported: int | None = None,
     backfilled: int | None = None,
 ):
     # Sanitise search
     q_clean = (q or "").strip()[:200] or None
 
-    sets = get_sets(
+    all_sets = get_sets(
         sort_by=sort, sort_dir=dir, q=q_clean,
         brands=brand, conditions=condition,
         themes=theme, statuses=status,
@@ -90,13 +152,20 @@ async def index(
         themes=theme, statuses=status,
     )
     total = count_all_sets()
+    pag = _paginate(all_sets, page, size)
+    base_query = _pagination_base_query(q_clean, sort, dir, brand, condition, theme, status)
 
     return templates.TemplateResponse(request, "index.html", context=_ctx(
-        request, sets=sets, facets=facets, total=total,
+        request, sets=pag["sets"], facets=facets, total=total,
         active_filters={"brand": brand, "condition": condition,
                         "theme": theme, "status": status},
         q=q_clean or "", sort=sort, dir=dir,
         sort_options=["date_of_purchase", "name", "brand", "part_count", "price_paid"],
+        page=pag["page"], size=pag["size"], page_count=pag["page_count"],
+        start=pag["start"], end=pag["end"],
+        filtered_total=pag["filtered_total"],
+        allowed_page_sizes=ALLOWED_PAGE_SIZES,
+        base_query=base_query,
         flash_imported=imported,
         flash_backfilled=backfilled,
     ))
@@ -112,22 +181,31 @@ async def api_filter(
     condition: list[str] = Query(default_factory=list),
     theme: list[str] = Query(default_factory=list),
     status: list[str] = Query(default_factory=list),
+    page: int = 1,
+    size: int = DEFAULT_PAGE_SIZE,
 ):
     """Returns just the results region as an HTML partial — for live filtering."""
     q_clean = (q or "").strip()[:200] or None
 
-    sets = get_sets(
+    all_sets = get_sets(
         sort_by=sort, sort_dir=dir, q=q_clean,
         brands=brand, conditions=condition,
         themes=theme, statuses=status,
     )
     total = count_all_sets()
+    pag = _paginate(all_sets, page, size)
+    base_query = _pagination_base_query(q_clean, sort, dir, brand, condition, theme, status)
 
     return templates.TemplateResponse(request, "_results_partial.html", context=_ctx(
-        request, sets=sets, total=total,
+        request, sets=pag["sets"], total=total,
         active_filters={"brand": brand, "condition": condition,
                         "theme": theme, "status": status},
         q=q_clean or "",
+        page=pag["page"], size=pag["size"], page_count=pag["page_count"],
+        start=pag["start"], end=pag["end"],
+        filtered_total=pag["filtered_total"],
+        allowed_page_sizes=ALLOWED_PAGE_SIZES,
+        base_query=base_query,
     ))
 
 
