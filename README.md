@@ -65,6 +65,10 @@ cp .env.example .env
 
 Open <http://localhost:8000/> in a browser. The SQLite database is created on first request.
 
+> The LaunchAgent does **not** use this port. It reads `PORT` from `.env` and picks the
+> next free one above it — since 2026-08-29 that is **8768**, because port 8000 is kept
+> free for prototyping. Check the current one with `./scripts/launchagent.sh status`.
+
 ## Configuration
 
 All configuration lives in `.env` (gitignored). Copy `.env.example` and fill in:
