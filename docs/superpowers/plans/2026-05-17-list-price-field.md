@@ -870,7 +870,7 @@ Expected: 98 passed (no test changes).
 
 Server smoke check (start a temp uvicorn on a non-clashing port):
 ```
-cd /Users/hhalfpap/git/projects/own/brickset-tracker && .venv/bin/uvicorn main:app --port 8129
+cd "$(git rev-parse --show-toplevel)" && .venv/bin/uvicorn main:app --port 8129
 ```
 Run with `run_in_background: true`. Then:
 ```
@@ -968,7 +968,7 @@ Expected: 98 passed.
 
 Smoke: start a temp uvicorn and curl `/sets/4/edit` (or any existing set id; pick one from your DB):
 ```
-cd /Users/hhalfpap/git/projects/own/brickset-tracker && .venv/bin/uvicorn main:app --port 8130
+cd "$(git rev-parse --show-toplevel)" && .venv/bin/uvicorn main:app --port 8130
 ```
 Run with `run_in_background: true`. Then:
 ```
@@ -1041,7 +1041,7 @@ Expected: 98 passed.
 
 Smoke check: start uvicorn and inspect the list page:
 ```
-cd /Users/hhalfpap/git/projects/own/brickset-tracker && .venv/bin/uvicorn main:app --port 8131
+cd "$(git rev-parse --show-toplevel)" && .venv/bin/uvicorn main:app --port 8131
 ```
 Run with `run_in_background: true`. Then:
 ```

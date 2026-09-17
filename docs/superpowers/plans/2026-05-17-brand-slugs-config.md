@@ -1272,7 +1272,7 @@ The `.settings-link` CSS class is added in Task 10. Until then the icon will ren
 Smoke check via TestClient — every existing page extends base.html, so the icon should now appear on `/`, `/add`, `/sets/{id}`, `/sets/{id}/edit`, `/import/brickset`, `/settings/brand-slugs`:
 
 ```
-cd /Users/hhalfpap/git/projects/own/brickset-tracker && .venv/bin/python -c "
+cd "$(git rev-parse --show-toplevel)" && .venv/bin/python -c "
 from fastapi.testclient import TestClient
 from main import app
 from execution import db as dbmod
@@ -1444,7 +1444,7 @@ Expected: 133 passed.
 - [ ] **Step 4: Smoke check cache buster**
 
 ```
-cd /Users/hhalfpap/git/projects/own/brickset-tracker && .venv/bin/python -c "
+cd "$(git rev-parse --show-toplevel)" && .venv/bin/python -c "
 from fastapi.testclient import TestClient
 from main import app
 r = TestClient(app).get('/')

@@ -244,7 +244,7 @@ git commit -m "feat(config): BRICKSET_DATA_DIR env var rebases DB + uploads (V1.
 
 ### Step 1: Write `.env.example`
 
-Create `/Users/hhalfpap/git/projects/own/brickset-tracker/.env.example` with EXACTLY this content:
+Create `.env.example` at the repo root with EXACTLY this content:
 
 ```bash
 # Brickset Tracker — environment configuration
@@ -334,7 +334,7 @@ git commit -m "docs: .env.example template for fresh-clone configuration (V1.1b)
 
 ### Step 1: Write the LICENSE file
 
-Create `/Users/hhalfpap/git/projects/own/brickset-tracker/LICENSE` with this exact content:
+Create `LICENSE` at the repo root with this exact content:
 
 ```
 MIT License
@@ -384,7 +384,7 @@ touch docs/screenshots/.gitkeep
 
 ### Step 2: Write `README.md` at the repo root
 
-Create `/Users/hhalfpap/git/projects/own/brickset-tracker/README.md` with this exact content:
+Create `README.md` at the repo root with this exact content:
 
 ```markdown
 # Brickset Tracker
@@ -647,7 +647,7 @@ If grep returns a "V1.1" section header, add line 12 inside it. Otherwise, creat
 - [ ] **Step 1: Four new commits since the spec**
 
 ```bash
-cd /Users/hhalfpap/git/projects/own/brickset-tracker
+cd "$(git rev-parse --show-toplevel)"
 git log --oneline 9f19728..HEAD
 ```
 

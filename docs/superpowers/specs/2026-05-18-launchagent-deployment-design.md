@@ -179,7 +179,7 @@ A second port-conflict test:
 ## Risk + Migration
 
 - **No app source changes.** Production code is untouched.
-- **Single-machine deployment** — the plist hard-codes `/Users/hhalfpap/git/projects/own/brickset-tracker`. Moving the project requires re-running `install`.
+- **Single-machine deployment** — the plist hard-codes the absolute path of this checkout. Moving the project requires re-running `install`.
 - **No state migration.** SQLite DB and `uploads/` already live in the project tree; the LaunchAgent just runs the same uvicorn in the same `WorkingDirectory`.
 - **`.env` mutation** — the install script edits `.env` (replacing or appending the `PORT` line). `.env` is gitignored, so this never affects the repo.
 

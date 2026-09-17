@@ -261,7 +261,7 @@ Replace with:
 - [ ] **Step 2: Final verification**
 
 ```bash
-cd /Users/hhalfpap/git/projects/own/brickset-tracker
+cd "$(git rev-parse --show-toplevel)"
 git log --oneline 5429f6c..HEAD
 ```
 
@@ -290,7 +290,7 @@ Expected: HTTP 200, server responding.
 - [ ] **Step 1: Two commits since the spec**
 
 ```bash
-cd /Users/hhalfpap/git/projects/own/brickset-tracker
+cd "$(git rev-parse --show-toplevel)"
 git log --oneline 5429f6c..HEAD
 ```
 
