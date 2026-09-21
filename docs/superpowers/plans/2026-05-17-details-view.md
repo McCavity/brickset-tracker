@@ -847,7 +847,7 @@ Expected: `OK 17`.
 - [ ] **Step 4: Smoke check translations render**
 
 ```
-cd /Users/hhalfpap/git/projects/own/brickset-tracker && .venv/bin/python -c "
+cd "$(git rev-parse --show-toplevel)" && .venv/bin/python -c "
 from fastapi.testclient import TestClient
 from main import app
 from execution import db as dbmod
@@ -1105,7 +1105,7 @@ Expected: 104 passed.
 - [ ] **Step 4: Smoke check that the stylesheet bump rendered**
 
 ```
-cd /Users/hhalfpap/git/projects/own/brickset-tracker && .venv/bin/python -c "
+cd "$(git rev-parse --show-toplevel)" && .venv/bin/python -c "
 from fastapi.testclient import TestClient
 from main import app
 r = TestClient(app).get('/')

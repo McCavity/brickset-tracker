@@ -230,8 +230,8 @@ Expected output (port may differ if 8000 is already busy in some unrelated way �
 
 ```
 ✓ LaunchAgent installed and responding on http://localhost:8000/
-  Logs:  /Users/hhalfpap/Library/Logs/brickset-tracker.log
-  Plist: /Users/hhalfpap/Library/LaunchAgents/de.hhalfpap.brickset-tracker.plist
+  Logs:  ${HOME}/Library/Logs/brickset-tracker.log
+  Plist: ${HOME}/Library/LaunchAgents/de.hhalfpap.brickset-tracker.plist
 ```
 
 If this fails because port 8000 is busy, run `lsof -nP -iTCP:8000 -sTCP:LISTEN` to see what's holding it. Stop that process, then re-run `install`. (Port discovery in Task 3 will make this automatic.)
@@ -512,7 +512,7 @@ HTTP 200 on http://localhost:8000/
 Expected:
 
 ```
-✓ LaunchAgent uninstalled. (Log file preserved at /Users/hhalfpap/Library/Logs/brickset-tracker.log.)
+✓ LaunchAgent uninstalled. (Log file preserved at ${HOME}/Library/Logs/brickset-tracker.log.)
 ```
 
 Confirm the plist is gone and `launchctl` doesn't know about it:

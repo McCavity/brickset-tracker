@@ -47,7 +47,7 @@ If any lines are missing, append them.
 - [ ] **Step 3: Initialize git**
 
 Run: `git init`
-Expected: `Initialized empty Git repository in /Users/hhalfpap/git/projects/own/brickset-tracker/.git/`
+Expected: `Initialized empty Git repository in <repo root>/.git/`
 
 - [ ] **Step 4: Initial commit of current state**
 
